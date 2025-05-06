@@ -1,0 +1,3 @@
+[console_scripts]
+dicl-sac = dicl.rl.sac_continuous_action_dicl:main
+sac = dicl.rl.sac_continuous_action:main

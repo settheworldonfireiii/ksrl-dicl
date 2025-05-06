@@ -1,0 +1,16 @@
+*.png
+*.pdf
+*.gif
+*.pkl
+*.pyc
+
+.ipynb_checkpoints/
+
+*.egg-info
+PKG-INFO
+
+runs/
+
+.ruff_cache/
+
+__pycache__

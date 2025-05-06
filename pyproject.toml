@@ -1,0 +1,50 @@
+[build-system]
+requires = ["setuptools>=45", "wheel", "setuptools_scm[toml]>=6.2"]
+
+[project]
+name = "KSRL_DICL"
+authors = [
+  {name = "Abdelhakim Benechehab", email = "abdelhakim.benechehab@gmail.com"},
+  {name = "Youssef Attia El Hili", email = "youssef.attiaeh@gmail.com"},
+  {name = "Ambroise Odonnat", email = "ambroiseodonnattechnologie@gmail.com"},
+  {name = "Oussama Zekri", email = "oussama.zekri@ens-paris-saclay.fr"},
+  {name = "Albert Thomas", email = "albertthomas88@gmail.com"},
+  {name = "Giuseppe Paolo", email = "giuseppe.g.paolo@gmail.com"},
+  {name = "Maurizio Filippone", email = "maurizio.filippone@kaust.edu.sa"},
+  {name = "Ievgen Redko", email = "ievgen.redko@huawei.com"},
+  {name = "Balázs Kégl", email = "balazs.kegl@gmail.com"},
+]
+maintainers = [
+  {name = "Abdelhakim Benechehab", email = "abdelhakim.benechehab@gmail.com"},
+]
+dynamic = ["version","readme", "dependencies"]
+description = "Zero-shot Model-based Reinforcement Learning using Large Language Models."
+requires-python = ">=3.9"
+keywords = ["Model-based Reinforcement Learning", "Large language models", "Zero-shot Learning", "In-context Learning"]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Programming Language :: Python :: 3.9",
+  "Environment :: GPU :: NVIDIA CUDA :: 12 :: 12.1",
+  "License :: OSI Approved :: MIT License",
+  "Topic :: Scientific/Engineering :: Artificial Intelligence"
+]
+
+[project.optional-dependencies]
+dev = ['ruff', 'pre-commit', 'black']
+rl = ['gymnasium[mujoco]==0.28.1', 'mujoco==2.3.3', 'stable-baselines3==2.0.0', 'tyro==0.5.10']
+
+[tool.setuptools]
+license-files = ['LICEN[CS]E*', 'COPYING*', 'NOTICE*', 'AUTHORS*']
+
+[project.scripts]
+sac = "dicl.rl.sac_continuous_action:main"
+dicl-sac = "dicl.rl.sac_continuous_action_dicl:main"
+
+[tool.setuptools.dynamic]
+readme = { file = ["README.md"] }
+dependencies = { file = ["requirements.txt"] }
+
+[tool.setuptools_scm]
+
+[tool.ruff]
+line-length = 88
