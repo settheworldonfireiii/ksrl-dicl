@@ -554,6 +554,7 @@ class Actor(nn.Module):
 
 
 def main():
+    erstens = True
     args = tyro.cli(Args)
     tf.disable_v2_behavior()
     run_name = f"{args.env_id}__{args.exp_name}__{args.seed}__{int(time.time())}"
@@ -918,14 +919,15 @@ def main():
                 coeff_batches_to_train_on = [1.0]
                 batches_to_train_on = [copy.copy(data)]
                 #can do some decaying schedule instead
-                if (global_step + local_step)%250 == 0:
+                if (global_step + local_step)%250 == 0:                
                     for i in range(batches_to_train_on[0].observations.shape[0]):
                         #pdb.set_trace()
                         xu = torch.cat((torch.tensor(tf.get_static_value(batches_to_train_on[0].observations[i].squeeze().cpu())).double(), torch.tensor(tf.get_static_value(batches_to_train_on[0].actions[i].squeeze().cpu())).double()))
                         #print("XUXUXU ", xu)
                         #pdb.set_trace()
                         shappe = my_dx.add_data(new_x=xu, new_y=torch.tensor(tf.get_static_value(batches_to_train_on[0].next_observations[i].cpu())).squeeze() - torch.tensor(tf.get_static_value(batches_to_train_on[0].observations[i].cpu())).squeeze(), new_r = torch.tensor(tf.get_static_value(batches_to_train_on[0].rewards[i].cpu())).squeeze(0))
-                        """
+                if (global_step + local_step)%500 == 0:
+                    """
                         my_dx.train(100)
                         print("TRAINED LIKE IN AKHMAT!")
                         post_var = my_dx.update_bays_reg()
@@ -934,8 +936,8 @@ def main():
                         posterior_sigma.append(np.trace(post_var[0]))
                         print("POSTERIOR SIGMA ", posterior_sigma)
                         ksd_val = my_dx.get_ksd('ksd')
-                        """
-                    """
+                    
+                    
                     if (global_step+local_step) % 1000 == 0:
                         print("GLOBAL STEP ", global_step)
                         print("LOCAL STEP ", local_step)
@@ -947,7 +949,6 @@ def main():
                     """
                     print("GLOBAL STEP ", global_step)
                     print("LOCAL STEP ", local_step)
-                    
                     my_dx.train(100)
                     #pdb.set_trace()
                     #print("TRAINED LIKE IN AKHMAT!")
@@ -961,7 +962,7 @@ def main():
                     #coeff_batches_to_train_on = [1.0]
                     
                 # 3. Sample from rb and transformed_rb to train ActorCritic
-                erstens = True
+                
                 if (
                     (global_step + local_step)
                     > args.llm_learning_starts
@@ -982,22 +983,22 @@ def main():
                         coeff_batches_to_train_on.append(
                             float(args.llm_batch_size / args.batch_size)
                         )
-                             
-                        if ((global_step + local_step) % 125 == 0) or erstens:
+                        if ((global_step + local_step) % 35 == 0) or erstens:
+
+                            for i in range(batches_to_train_on[1].observations.shape[0]):
+
+                                xu = torch.cat((torch.tensor(tf.get_static_value(batches_to_train_on[1].observations[i].squeeze().cpu())).double(), torch.tensor(tf.get_static_value(batches_to_train_on[1].actions[i].squeeze().cpu())).double()))
+                                print("XUXUXU ", xu)
+                                #pdb.set_trace()
+                                shappe = my_dx.add_data(new_x=xu, new_y=torch.tensor(tf.get_static_value(batches_to_train_on[1].next_observations[i].cpu())).squeeze() - torch.tensor(tf.get_static_value(batches_to_train_on[1].observations[i].cpu())).squeeze(), new_r = torch.tensor(tf.get_static_value(batches_to_train_on[1].rewards[i].cpu())).squeeze(0), real = False)
+                                print("SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS")
+                                #batches_to_train_on = [merge_and_shuffle_samples(data,data_llm)] 
+
+                        if ((global_step + local_step) % 71 == 0) or erstens:
                             print("GLOBAL STEP ", global_step)
                             print("LOCAL STEP ", local_step)
  
 
-                            for i in range(batches_to_train_on[1].observations.shape[0]):
-                                xu = torch.cat((torch.tensor(tf.get_static_value(batches_to_train_on[1].observations[i].squeeze().cpu())).double(), torch.tensor(tf.get_static_value(batches_to_train_on[1].actions[i].squeeze().cpu())).double()))
-                                print("XUXUXU ", xu)
-                                #pdb.set_trace()
-                                shappe = my_dx.add_data(new_x=xu, new_y=torch.tensor(tf.get_static_value(batches_to_train_on[1].next_observations[i].cpu())).squeeze() - torch.tensor(tf.get_static_value(batches_to_train_on[1].observations[i].cpu())).squeeze(), new_r = torch.tensor(tf.get_static_value(batches_to_train_on[1].rewards[i].cpu())).squeeze(0), real = False)                 
-                                print("SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS")
-                                #batches_to_train_on = [merge_and_shuffle_samples(data,data_llm)] 
-
-                            #my_dx.train(100)
-                            #pdb.set_trace()
                             print("TRAINED LIKE IN AKHMAT!")
                             """
                             post_var = my_dx.update_bays_reg()
