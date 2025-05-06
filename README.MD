@@ -18,12 +18,14 @@ OR
 by returning the ACTUAL DATA from thin_data_new() (I suppose that one will be harder because you will have to compute next_observation by adding self.train_y_s, the difference, and extract actions from self.train_x_s)
 
 
-4) BONUS: try implementing Bayesian thinning on ReplayBuffer so that we feed best 300 transitions to the LLM.
+4) BONUS: try implementing Bayesian thinning on ReplayBuffer so that we feed best 300 transitions to the LLM.  
+4.1 randomized windowing to have consecutive stuff   
+4.2 other ideas   
 
 5) MEGABONUS : any ideas to speed things up while retaining quality?  
 things to consider  
 5.5 Using the main LLM also to extract log probs of next states  
 5.6 Using another separate LLM to extract log probs of next states    
 5.7 Pretrain Bayesian net for some decent amount of epochs and then instead of training it just load the weights     
-5.8 Reduce the number of samples retained within Bayesian net    
-5.9 Use critic's weights to compute log probs  
+5.8 Reduce the number of samples retained within Bayesian net (e.g. sort of updating not every steps, or at certain windows, or something other)        
+5.9 Use critic's weights to compute log probs    

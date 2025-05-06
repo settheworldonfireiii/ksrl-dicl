@@ -1011,6 +1011,8 @@ def main():
                             ksd_val_s = my_dx.get_ksd('ksd', False)
                             print("KSD VAL FAKE", ksd_val_s)
                             erstens = False
+                            pdb.set_trace()
+                            my_dx.thin_data_new()
 
                 # --------------------------------------------
                 iterator = 0
