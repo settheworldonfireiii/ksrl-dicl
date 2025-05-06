@@ -25,5 +25,5 @@ things to consider
 5.5 Using the main LLM also to extract log probs of next states  
 5.6 Using another separate LLM to extract log probs of next states    
 5.7 Pretrain Bayesian net for some decent amount of epochs and then instead of training it just load the weights     
-5.8 Reduce the number of samples retained within Bayesian net  
- 
+5.8 Reduce the number of samples retained within Bayesian net    
+5.9 Use critic's weights to compute log probs  
