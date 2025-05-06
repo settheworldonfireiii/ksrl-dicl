@@ -21,16 +21,9 @@ class PruningContainer:
 
         return torch.stack(row_sums).argmin()
 
-    def best_index_del(self, candidate_points, candidate_gradients):
-        #Given an array of new points and gradients, select the KSD-optimal point
-
-        row_sums = []
-        for candidate_point,candidate_gradient in zip(candidate_points,candidate_gradients):
-            stacked_points = torch.cat([self.points,candidate_point.unsqueeze(0)])
-            stacked_gradients= torch.cat([self.gradients,candidate_gradient.unsqueeze(0)])
-            h = ksd._get_h(stacked_points,self.h_method) if self.kernel_type=='rbf' else None
-            row_sums.append(ksd.get_K_row(samples=stacked_points,gradients=stacked_gradients,kernel_type=self.kernel_type,h=h).sum())
-        beste = torch.stack(row_sums).argmin()
+    def best_index_del(self):
+        removal_ksd2_contrib,beste = torch.topk(self.ksd2_contrib,1,largest=False) 
+        print(len(self.ksd2_contrib))
         self.update_K_info(method='remove_row',removed_row_index=beste)  
         return beste
 

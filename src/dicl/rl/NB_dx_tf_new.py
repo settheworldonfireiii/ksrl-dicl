@@ -494,7 +494,7 @@ class neural_bays_dx_tf(object):
 
                 #write : Update pruning container
                 kernel_type = 'rbf'
-                pruning_container = ksdp.PruningContainer(kernel_type=kernel_type,
+                pruning_container = PruningContainer(kernel_type=kernel_type,
                                                   h_method='dim' if kernel_type=='rbf' else None,
                                                   )
                 
@@ -571,7 +571,13 @@ class neural_bays_dx_tf(object):
                 #get the ids to keep
                 ids = [x for x in ids_total if x not in ids_pruned]
 
-                
+                print("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA ", i, "  AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
+                #MIGHT NEED TO RE-WORK IT
+                to_retain = []
+                #HARDCODED BATCHSIZE -- BAD -- NEEDS TO BE REDONE
+                for _ in range(128):
+                    to_retain.append(pruning_container.best_index_del())
+                    
             elif thin_type == 'random'  :
                 ids = np.random.choice(self.train_x.shape[0], 50, replace=False)      
 
@@ -651,7 +657,7 @@ class neural_bays_dx_tf(object):
 
                 #write : Update pruning container
                 kernel_type = 'rbf'
-                pruning_container = ksdp.PruningContainer(kernel_type=kernel_type,
+                pruning_container = PruningContainer(kernel_type=kernel_type,
                                                   h_method='dim' if kernel_type=='rbf' else None,
                                                   )
 
@@ -726,9 +732,16 @@ class neural_bays_dx_tf(object):
                 ids = [x for x in ids_total if x not in ids_pruned]
 
 
+
             elif thin_type == 'random'  :
                 ids = np.random.choice(self.train_x_s.shape[0], 50, replace=False)
 
+
+
+            #HARDCODED BATCHSIZE -- BAD -- NEEDS TO BE REDONE
+            to_retain = []
+            for _ in range(7):
+                to_retain.append(pruning_container.best_index_del())
 
 
             #get the updated data
@@ -739,7 +752,7 @@ class neural_bays_dx_tf(object):
 
 
             
-        return ids_pruned
+        return to_retain
         
     def get_ksd(self, thin_type, real = True):
         if real:
@@ -955,7 +968,7 @@ class neural_bays_dx_tf(object):
 
             #write : Update pruning container
             kernel_type = 'rbf'
-            pruning_container = ksdp.PruningContainer(kernel_type=kernel_type,
+            pruning_container = PruningContainer(kernel_type=kernel_type,
                                               h_method='dim' if kernel_type=='rbf' else None,
                                               )
 

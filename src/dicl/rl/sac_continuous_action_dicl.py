@@ -969,7 +969,7 @@ def main():
                     - args.learning_starts + step_started_sampling
                 ) and started_sampling:
                     #INCREASE THE LLM BATCH SIZE
-                    data_llm = rb_llm.sample(args.llm_batch_size)
+                    data_llm = rb_llm.sample(args.llm_batch_size*7)
                     # concatenate data and data_llm
                     if args.train_only_from_llm:
                         # data = data_llm
@@ -984,7 +984,7 @@ def main():
                             float(args.llm_batch_size / args.batch_size)
                         )
                         if ((global_step + local_step) % 35 == 0) or erstens:
-
+                              
                             for i in range(batches_to_train_on[1].observations.shape[0]):
 
                                 xu = torch.cat((torch.tensor(tf.get_static_value(batches_to_train_on[1].observations[i].squeeze().cpu())).double(), torch.tensor(tf.get_static_value(batches_to_train_on[1].actions[i].squeeze().cpu())).double()))
@@ -1012,7 +1012,8 @@ def main():
                             print("KSD VAL FAKE", ksd_val_s)
                             erstens = False
                             pdb.set_trace()
-                            my_dx.thin_data_new()
+                            indices = my_dx.thin_data_new("ksd", False)
+                            data_llm = data_llm[indices]
 
                 # --------------------------------------------
                 iterator = 0
