@@ -28,6 +28,11 @@ from transformers import LlamaForCausalLM, AutoTokenizer
 from dicl import dicl
 
 from typing import Any, Callable, Optional, Union
+
+
+from stable_baselines3.common.type_aliases import ReplayBufferSamples
+
+
 import pdb
 
 from stable_baselines3.common.vec_env import VecNormalize
@@ -926,7 +931,7 @@ def main():
                         #print("XUXUXU ", xu)
                         #pdb.set_trace()
                         shappe = my_dx.add_data(new_x=xu, new_y=torch.tensor(tf.get_static_value(batches_to_train_on[0].next_observations[i].cpu())).squeeze() - torch.tensor(tf.get_static_value(batches_to_train_on[0].observations[i].cpu())).squeeze(), new_r = torch.tensor(tf.get_static_value(batches_to_train_on[0].rewards[i].cpu())).squeeze(0))
-                if (global_step + local_step)%500 == 0:
+                if (global_step + local_step)%50 == 0:
                     """
                         my_dx.train(100)
                         print("TRAINED LIKE IN AKHMAT!")
@@ -978,19 +983,21 @@ def main():
                     else:
                         print("BATCHES TO TRAIN ON ", batches_to_train_on)
                         #pdb.set_trace()
+                        """
                         batches_to_train_on.append(copy.copy(data_llm))
                         
                         coeff_batches_to_train_on.append(
                             float(args.llm_batch_size / args.batch_size)
                         )
-                        if ((global_step + local_step) % 35 == 0) or erstens:
+                        """
+                        if ((global_step + local_step) % 25 == 0) or erstens:
                               
-                            for i in range(batches_to_train_on[1].observations.shape[0]):
+                            for i in range(data_llm.observations.shape[0]):
 
-                                xu = torch.cat((torch.tensor(tf.get_static_value(batches_to_train_on[1].observations[i].squeeze().cpu())).double(), torch.tensor(tf.get_static_value(batches_to_train_on[1].actions[i].squeeze().cpu())).double()))
+                                xu = torch.cat((torch.tensor(tf.get_static_value(data_llm.observations[i].squeeze().cpu())).double(), torch.tensor(tf.get_static_value(data_llm.actions[i].squeeze().cpu())).double()))
                                 print("XUXUXU ", xu)
                                 #pdb.set_trace()
-                                shappe = my_dx.add_data(new_x=xu, new_y=torch.tensor(tf.get_static_value(batches_to_train_on[1].next_observations[i].cpu())).squeeze() - torch.tensor(tf.get_static_value(batches_to_train_on[1].observations[i].cpu())).squeeze(), new_r = torch.tensor(tf.get_static_value(batches_to_train_on[1].rewards[i].cpu())).squeeze(0), real = False)
+                                shappe = my_dx.add_data(new_x=xu, new_y=torch.tensor(tf.get_static_value(data_llm.next_observations[i].cpu())).squeeze() - torch.tensor(tf.get_static_value(data_llm.observations[i].cpu())).squeeze(), new_r = torch.tensor(tf.get_static_value(data_llm.rewards[i].cpu())).squeeze(0), real = False)
                                 print("SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS")
                                 #batches_to_train_on = [merge_and_shuffle_samples(data,data_llm)] 
 
@@ -1011,9 +1018,26 @@ def main():
                             ksd_val_s = my_dx.get_ksd('ksd', False)
                             print("KSD VAL FAKE", ksd_val_s)
                             erstens = False
-                            pdb.set_trace()
+                            
                             indices = my_dx.thin_data_new("ksd", False)
-                            data_llm = data_llm[indices]
+                            #pdb.set_trace()
+                            inds = torch.cat(indices, dim=0)
+                            obs_l = data_llm.observations[inds] 
+                            next_obs_l = data_llm.next_observations[inds] 
+                            actions_l = data_llm.actions[inds]
+                            rewards_l  = data_llm.rewards[inds] 
+                            dones_l = data_llm.dones[inds]
+                            data_llm = ReplayBufferSamples(
+                                observations=obs_l,
+                                next_observations=next_obs_l,
+                                actions=actions_l,
+                                rewards=rewards_l,
+                                dones=dones_l
+                                )
+                            batches_to_train_on.append(copy.copy(data_llm))
+                            
+                            coeff_batches_to_train_on.append(float(args.llm_batch_size / args.batch_size))
+
 
                 # --------------------------------------------
                 iterator = 0

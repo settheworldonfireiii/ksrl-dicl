@@ -668,9 +668,9 @@ class neural_bays_dx_tf(object):
                 pruning_container.add_point(point=init_sample, gradient=init_gradient)
 
                 #Define the generatpr
-                sample_generator = ((torch.tensor(samples[i:i + 3],dtype=torch.double).to(device),
-                torch.tensor(gradients[i:i + 3], dtype=torch.double).to(device)) for i in range(0, samples.shape[0], 3))
-                print("STEPSTEPSTEPFILLFILLFILL ", samples.shape[0]) 
+                sample_generator = ((torch.tensor(samples[i:i + 10],dtype=torch.double).to(device),
+                torch.tensor(gradients[i:i + 10], dtype=torch.double).to(device)) for i in range(0, samples.shape[0], 10))
+
                 #implement new thining
                 addition_rule = 'spmcmc'
                 prune = [False, None]
@@ -686,11 +686,8 @@ class neural_bays_dx_tf(object):
 
                     #part 1
                     _, idx = batch_samples.unique_consecutive(dim=0,return_inverse=True)
-                    print("BATCH SAMPLES IDX IDX UNIQUIE ")
-                    print(idx)
-                    print(batch_samples)
                     idx = idx.unique()
-                    print ("IDS UNIQUIE ",idx)
+                    # print (idx)
                     batch_samples = batch_samples[idx]
                     batch_gradients = batch_gradients[idx]
 
@@ -702,9 +699,8 @@ class neural_bays_dx_tf(object):
 
 
                     #add to cont
-                    print(next_sample.shape, next_gradient.shape, " NEXT SAMPLE SHAPE NEXT GRADIENT SHAPE")
                     pruning_container.add_point(point=next_sample, gradient=next_gradient)
-                    print("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA ", i, " ", step, "  AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
+
 
                     if exponent>(2.0-1e-10):
                         min_samples = step/2.0

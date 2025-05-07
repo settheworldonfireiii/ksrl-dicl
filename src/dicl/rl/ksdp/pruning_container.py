@@ -1,6 +1,8 @@
 import torch
 from . import ksd
 
+import pdb
+
 class PruningContainer:
     def __init__(self,kernel_type,h_method,full_mat=True,*args,**kwargs):
 
@@ -14,6 +16,8 @@ class PruningContainer:
       
         row_sums = []
         for candidate_point,candidate_gradient in zip(candidate_points,candidate_gradients):
+            print("SELF POINTS INSIDE BEST INDEX ", self.points)
+            print("CANDIDTE POINT UNSQUIEEZEE ", candidate_point.unsqueeze(0))
             stacked_points = torch.cat([self.points,candidate_point.unsqueeze(0)])
             stacked_gradients= torch.cat([self.gradients,candidate_gradient.unsqueeze(0)])
             h = ksd._get_h(stacked_points,self.h_method) if self.kernel_type=='rbf' else None
@@ -31,7 +35,7 @@ class PruningContainer:
     @torch.no_grad()
     def add_point(self, point, gradient):
         #Add point and gradient to container and update K matrix
-        
+        #pdb.set_trace()        
         try:
             assert hasattr(self,'points') and hasattr(self,'gradients') 
             self.points = torch.cat([self.points,point.unsqueeze(0)])
