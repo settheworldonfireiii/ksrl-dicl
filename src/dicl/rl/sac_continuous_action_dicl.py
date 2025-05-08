@@ -179,7 +179,7 @@ class Args:
     """automatic tuning of the entropy coefficient"""
 
     # Custom
-    save_policy_checkpoints: int = 1000000
+    save_policy_checkpoints: int = 20000
     """frequency of saving policy checkpoints"""
     act_deterministically: bool = False
     """whether to act deterministically"""
@@ -924,14 +924,14 @@ def main():
                 coeff_batches_to_train_on = [1.0]
                 batches_to_train_on = [copy.copy(data)]
                 #can do some decaying schedule instead
-                if (global_step + local_step)%250 == 0:                
+                if (global_step + local_step)%500 == 0:                
                     for i in range(batches_to_train_on[0].observations.shape[0]):
                         #pdb.set_trace()
                         xu = torch.cat((torch.tensor(tf.get_static_value(batches_to_train_on[0].observations[i].squeeze().cpu())).double(), torch.tensor(tf.get_static_value(batches_to_train_on[0].actions[i].squeeze().cpu())).double()))
                         #print("XUXUXU ", xu)
                         #pdb.set_trace()
                         shappe = my_dx.add_data(new_x=xu, new_y=torch.tensor(tf.get_static_value(batches_to_train_on[0].next_observations[i].cpu())).squeeze() - torch.tensor(tf.get_static_value(batches_to_train_on[0].observations[i].cpu())).squeeze(), new_r = torch.tensor(tf.get_static_value(batches_to_train_on[0].rewards[i].cpu())).squeeze(0))
-                if (global_step + local_step)%50 == 0:
+                if (global_step + local_step)%500 == 0:
                     """
                         my_dx.train(100)
                         print("TRAINED LIKE IN AKHMAT!")
@@ -957,9 +957,10 @@ def main():
                     my_dx.train(100)
                     #pdb.set_trace()
                     #print("TRAINED LIKE IN AKHMAT!")
+                
                     post_var = my_dx.update_bays_reg()
                     #print (np.trace(post_var[0]))
-
+                      
                     posterior_sigma.append(np.trace(post_var[0]))
                     #print("POSTERIOR SIGMA ", posterior_sigma)
                     ksd_val = my_dx.get_ksd('ksd')
@@ -1000,8 +1001,8 @@ def main():
                                 shappe = my_dx.add_data(new_x=xu, new_y=torch.tensor(tf.get_static_value(data_llm.next_observations[i].cpu())).squeeze() - torch.tensor(tf.get_static_value(data_llm.observations[i].cpu())).squeeze(), new_r = torch.tensor(tf.get_static_value(data_llm.rewards[i].cpu())).squeeze(0), real = False)
                                 print("SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS")
                                 #batches_to_train_on = [merge_and_shuffle_samples(data,data_llm)] 
-
-                        if ((global_step + local_step) % 71 == 0) or erstens:
+                        # 71
+                        if ((global_step + local_step) % 25  == 0) or erstens:
                             print("GLOBAL STEP ", global_step)
                             print("LOCAL STEP ", local_step)
  
@@ -1021,7 +1022,7 @@ def main():
                             
                             indices = my_dx.thin_data_new("ksd", False)
                             #pdb.set_trace()
-                            inds = torch.cat(indices, dim=0)
+                            inds = torch.cat(indices, dim=0).cpu().numpy()
                             obs_l = data_llm.observations[inds] 
                             next_obs_l = data_llm.next_observations[inds] 
                             actions_l = data_llm.actions[inds]

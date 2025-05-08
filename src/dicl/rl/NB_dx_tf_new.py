@@ -749,10 +749,17 @@ class neural_bays_dx_tf(object):
 
 
             #get the updated data
+            self.train_x_s = None
+            self.train_y_s = None
+            self.rew_s = None
+
+
+            """
             self.train_x_s = self.train_x_s[ids]
             self.train_y_s = self.train_y_s[ids]
             self.rew_s = self.rew_s[ids]
-            print ('after' + str(self.train_x_s.shape), str(self.train_y_s.shape))
+            """
+            #print ('after' + str(self.train_x_s.shape), str(self.train_y_s.shape))
 
 
             
