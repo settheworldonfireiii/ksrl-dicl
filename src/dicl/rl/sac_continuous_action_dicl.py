@@ -921,17 +921,26 @@ def main():
                                 llm_terminations,
                                 {},  # llm_infos,
                             )
+                #pdb.set_trace()
                 coeff_batches_to_train_on = [1.0]
                 batches_to_train_on = [copy.copy(data)]
                 #can do some decaying schedule instead
-                if (global_step + local_step)%500 == 0:                
+                if (global_step + local_step)%200 == 0:                
                     for i in range(batches_to_train_on[0].observations.shape[0]):
                         #pdb.set_trace()
-                        xu = torch.cat((torch.tensor(tf.get_static_value(batches_to_train_on[0].observations[i].squeeze().cpu())).double(), torch.tensor(tf.get_static_value(batches_to_train_on[0].actions[i].squeeze().cpu())).double()))
+                        if args.env_id == "Pendulum-v1":
+                            xu = torch.cat((torch.tensor(tf.get_static_value(batches_to_train_on[0].observations[i].squeeze().cpu())).double(), torch.tensor(tf.get_static_value(batches_to_train_on[0].actions[i].squeeze().cpu())).double().reshape(1)))
+                        else:
+                            xu = torch.cat((torch.tensor(tf.get_static_value(batches_to_train_on[0].observations[i].squeeze().cpu())).double(), torch.tensor(tf.get_static_value(batches_to_train_on[0].actions[i].squeeze().cpu())).double()))
                         #print("XUXUXU ", xu)
                         #pdb.set_trace()
                         shappe = my_dx.add_data(new_x=xu, new_y=torch.tensor(tf.get_static_value(batches_to_train_on[0].next_observations[i].cpu())).squeeze() - torch.tensor(tf.get_static_value(batches_to_train_on[0].observations[i].cpu())).squeeze(), new_r = torch.tensor(tf.get_static_value(batches_to_train_on[0].rewards[i].cpu())).squeeze(0))
-                if (global_step + local_step)%500 == 0:
+                    #if (global_step + local_step)%200 == 0:
+                    
+                    my_dx.generate_latent_z()
+                    ksd_val = my_dx.get_ksd('ksd')
+                    print("KSD VAL", ksd_val)
+
                     """
                         my_dx.train(100)
                         print("TRAINED LIKE IN AKHMAT!")
@@ -960,7 +969,7 @@ def main():
                 
                     post_var = my_dx.update_bays_reg()
                     #print (np.trace(post_var[0]))
-                      
+                   
                     posterior_sigma.append(np.trace(post_var[0]))
                     #print("POSTERIOR SIGMA ", posterior_sigma)
                     ksd_val = my_dx.get_ksd('ksd')
