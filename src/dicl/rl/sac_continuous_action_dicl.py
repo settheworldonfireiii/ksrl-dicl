@@ -688,9 +688,9 @@ def main():
             )
 
         # ------- This is interaction with environment -------
-        if global_step % 1000 == 0:
-            #PROBABLY WILL PUT INTO SOME OTHER PLACE
-            my_dx.sample()
+        #if global_step % 1000 == 0:
+        #PROBABLY WILL PUT INTO SOME OTHER PLACE
+        #my_dx.sample()
             
 
 
