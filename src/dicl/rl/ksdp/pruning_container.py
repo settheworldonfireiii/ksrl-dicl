@@ -41,6 +41,7 @@ class PruningContainer:
             self.points = torch.cat([self.points,point.unsqueeze(0)])
             self.gradients = torch.cat([self.gradients,gradient.unsqueeze(0)])
             self.update_K_info(method='add_row')
+            print("WE HAVE THIS POINTS ", len(self.points))
 
         except Exception as e:
             
