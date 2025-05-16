@@ -392,10 +392,7 @@ if __name__ == "__main__":
         print(envs.__dict__)
         print(evaluate_policies_sb(actor, envs.envs[0], args.neps))
         del actor
-    if args.env != 'HalfCheetah':
-        #for now, until we get to process hdf5s for Hopper, Kitchen and Pendulum
-        exit()
-    del envs
+    exit()
     
 
     X = pd.read_csv(args.baseline, index_col=0)

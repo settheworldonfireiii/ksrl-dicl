@@ -997,7 +997,9 @@ def main():
                     ) and started_sampling:
                         #pdb.set_trace()
                         #INCREASE THE LLM BATCH SIZE
-                        data_llm = rb_llm.sample(args.llm_batch_size*7)
+                        
+                        if args.train_only_from_llm or (global_step + local_step)%200 == 0:
+                            data_llm = rb_llm.sample(args.llm_batch_size*7)
                         # concatenate data and data_llm
                         if args.train_only_from_llm:
                             # data = data_llm
