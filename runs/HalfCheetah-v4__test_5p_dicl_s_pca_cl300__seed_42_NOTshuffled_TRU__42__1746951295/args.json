@@ -1,11 +1,6 @@
 {
-<<<<<<<< HEAD:runs/HalfCheetah-v4__RUN2_128_39_dicl_s_pca_cl300__seed_RANDOM_NOTshuffled_TRU__26657__1747337914/args.json
     "exp_name": "RUN2_128_39_dicl_s_pca_cl300__seed_RANDOM_NOTshuffled_TRU",
-    "seed": 26657,
-========
-    "exp_name": "test_5p_dicl_s_pca_cl300__seed_42_NOTshuffled_TRU",
-    "seed": 42,
->>>>>>>> thinning:runs/HalfCheetah-v4__test_5p_dicl_s_pca_cl300__seed_42_NOTshuffled_TRU__42__1746951295/args.json
+     "seed": 26657,
     "torch_deterministic": true,
     "cuda": true,
     "capture_video": false,
