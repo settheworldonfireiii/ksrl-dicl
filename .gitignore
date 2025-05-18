@@ -1,5 +1,16 @@
-/models--gpt2
-/rl-baselines3-zoo
+# --- Your Existing Rules (standardized with trailing slash for dirs) ---
+/models--gpt2/
+/rl-baselines3-zoo/
 *.out
-build
-@
+build/
+__pycache__/
+*.pyc
+*.swp
+*.swk
+*.swm
+*.swn
+*.swo
+.DS_Store
+*.egg-info/
+main.zip
+requirements.temp
