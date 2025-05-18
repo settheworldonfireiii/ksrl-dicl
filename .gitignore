@@ -1,3 +1,5 @@
 /models--gpt2
 /rl-baselines3-zoo
-
+*.out
+build
+@
