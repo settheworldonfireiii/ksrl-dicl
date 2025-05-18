@@ -57,7 +57,6 @@ class neural_bays_dx_tf(object):
         self.eye = np.eye(self.hidden_dim)
         self.mu_w = np.random.normal(loc=0, scale=.01, size=(output_shape, self.hidden_dim))
         self.cov_w = np.array([self.sigma2 * np.eye(self.hidden_dim) for _ in range(output_shape)])
-        print("OUTPUT SHAPE ", output_shape)
         self.train_synthetic_x = None
     #primary main code where data is added
     def add_data(self, new_x, new_y, new_r):
@@ -73,9 +72,6 @@ class neural_bays_dx_tf(object):
             tx = _to_np(self.train_x)
             nx = _to_np(new_x)
             self.train_x = np.vstack((tx, nx))
-            print(tx.shape)
-            print(nx.shape)
-            print(self.train_x.shape)
             ty = _to_np(self.train_y)
             ny = _to_np(new_y)
             tr = _to_np(self.rew)
@@ -84,7 +80,6 @@ class neural_bays_dx_tf(object):
             self.train_x = np.vstack((tx, nx))
                         
             self.train_y = np.vstack((ty, ny))
-            # print (torch.is_tensor(self.train_x))
             #add rewards
             self.rew = np.vstack((tr, nr))
             return self.train_x.shape
@@ -106,9 +101,7 @@ class neural_bays_dx_tf(object):
             tx = _to_np(self.train_synthetic_x)
             nx = _to_np(new_x)
             self.train_synthetic_x = np.vstack((tx, nx))
-            print(tx.shape)
-            print(nx.shape)
-            print(self.train_synthetic_x.shape)
+
             ty = _to_np(self.train_synthetic_y)
             ny = _to_np(new_y)
             tr = _to_np(self.rew_synthetic)
@@ -138,10 +131,6 @@ class neural_bays_dx_tf(object):
         sort_rew = self.rew.flatten()
         ids_reward = np.argsort(sort_rew)[::-1]
 
-        # print (np.argsort(self.rew)[::-1])
-        # print (np.sort(self.rew)[::-1])
-        # print (sort_rew)
-        # print (self.x.shape, self.y.shape, self.rew)
         
         #get sorted
         self.train_x = self.train_x[ids_reward]
@@ -190,30 +179,11 @@ class neural_bays_dx_tf(object):
         """
         if self.model_type == "SAC":
             z = self.model.predict(input)
-            """
-            print("EXTRACTED")
-            print(input.shape)
-            print(self.model.policy.features_extractor)
-            obs_tensor = torch.as_tensor(input, dtype=torch.float32).to(self.model.device)
-            features = self.model.actor.extract_features(
-                    obs_tensor, self.model.actor.features_extractor
-                    )
-            z_tensor = self.model.policy.actor.latent_pi(features)
-            z = z_tensor.detach().cpu().numpy()
-            """
         else:
             z = self.model.predict(input, layer = True)
         z = z.squeeze()
 
         return z
-
-
-    def check_dim(self):
-        print("prior to sampling, check dim as follows: ")
-        if self.output_shape == 1:
-            print("sampling from cost model")
-        else:
-            print("sampling from transition model")
         
 
     def sample(self, parallelize=False):
@@ -233,38 +203,11 @@ class neural_bays_dx_tf(object):
 
         except np.linalg.LinAlgError as e:
             # If the covariance isn’t positive definite, fall back to isotropic noise
-            print(f'Details: {e} | {e.args}.')
             multivariates = np.random.multivariate_normal(np.zeros((d,)), np.eye(d))
             beta_s.append(multivariates)
 
         self.beta_s = np.array(beta_s)
-    
-    
-    """
-    def sample(self, parallelize=False):
-        d = self.mu_w[0].shape[0]  # hidden_dim
-        beta_s = []
-        try:
-            
-            # Here output denotes the dimension of s' or s_t+1.
-            # For each output dimension : self.mu_w[i] :  
-            #mu_w[i] , cov_w[i] are the mean of the posterior distribution for the bayesian model
-            #This samples from the posterior distribution of weights and the samples are saved as beta_s
-            #beta_s[i] represents the weight for the first dim
 
-            for i in range(self.output_shape):
-                mus = self.mu_w[i]
-                covs = self.cov_w[i][np.newaxis, :, :]
-                multivariates = np.random.multivariate_normal(mus, covs[0])
-                beta_s.append(multivariates)
-
-        except np.linalg.LinAlgError as e:
-            # Sampling could fail if covariance is not positive definite
-            print('Details: {} | {}.'.format(e.message, e.args))
-            multivariates = np.random.multivariate_normal(np.zeros((d)), np.eye(d))
-            beta_s.append(multivariates)
-        self.beta_s = np.array(beta_s)
-    """
     def predict(self, x):
         # Compute last-layer representation for the current context
         z_context = self.get_representation(x)
@@ -296,8 +239,7 @@ class neural_bays_dx_tf(object):
             else:
                 y = self.train_y[:, i] - self.model.layers[len(self.model.layers)-1].biases.eval(session =self.model.sess).squeeze()[i]
             s = np.dot(z.T, z)
-            print(s.shape)
-            # inv = np.linalg.inv((s/self.sigma_n + 1/self.sigma*self.eye))
+
             A = s / self.sigma_n2 + 1 / self.sigma2 * self.eye
             B = np.dot(z.T, y) / self.sigma_n2
             reg_coeff = 0
@@ -311,7 +253,6 @@ class neural_bays_dx_tf(object):
                     inv = np.linalg.inv(A)
                 except Exception as e:
                     # in case computation failed
-                    print(e)
                     reg_coeff += 10
 
                 # Store new posterior distributions using inv
@@ -346,7 +287,6 @@ class neural_bays_dx_tf(object):
             
             except Exception as e:
                 # in case computation failed
-                print(e)
                 reg_coeff += 10
         
         #compute the post var
@@ -410,7 +350,6 @@ class neural_bays_dx_tf(object):
 
             #concat
             # nabla_z_f = np.hstack(nabla_z)
-            print ("NABLA Z SHAPE ", nabla_z_f.shape)
             
             grad = np.concatenate((nabla_z_f,nabla_y_f), axis=1)
             reg_y = np.squeeze(np.array(reg_y),2).T
@@ -555,13 +494,12 @@ class neural_bays_dx_tf(object):
                 #part 1
                 _, idx = batch_samples.unique_consecutive(dim=0,return_inverse=True)
                 idx = idx.unique()
-                # print (idx)
+
                 #pdb.set_trace()
                 batch_samples = batch_samples[idx]
                 batch_gradients = batch_gradients[idx]
                 
                 #get next
-                print("IIIIIIIIIIIIIIIIIIIIIIIIIIIIIII ", i ," IIIIIIIIIIIIIIIIIIIIIIIIIIIII")
                 if i == 100:
                     pdb.set_trace()
                 next_sample, next_gradient = neural_bays_dx_tf.select_samples(pruning_container=pruning_container,
@@ -725,7 +663,6 @@ class neural_bays_dx_tf(object):
                 batch_gradients = batch_gradients[idx]
 
                 #get next
-                print("IIIIIIIIIIIIIIIIIIIIIIIIIIIIIII ", i ," IIIIIIIIIIIIIIIIIIIIIIIIIIIII")
                 if i == 100:
                     pdb.set_trace()
                 next_sample, next_gradient = neural_bays_dx_tf.select_samples(pruning_container=pruning_container,

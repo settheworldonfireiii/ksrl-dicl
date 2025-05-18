@@ -16,8 +16,7 @@ class PruningContainer:
       
         row_sums = []
         for candidate_point,candidate_gradient in zip(candidate_points,candidate_gradients):
-            print("SELF POINTS INSIDE BEST INDEX ", self.points)
-            print("CANDIDTE POINT UNSQUIEEZEE ", candidate_point.unsqueeze(0))
+
             stacked_points = torch.cat([self.points,candidate_point.unsqueeze(0)])
             stacked_gradients= torch.cat([self.gradients,candidate_gradient.unsqueeze(0)])
             h = ksd._get_h(stacked_points,self.h_method) if self.kernel_type=='rbf' else None
@@ -27,7 +26,7 @@ class PruningContainer:
 
     def best_index_del(self):
         removal_ksd2_contrib,beste = torch.topk(self.ksd2_contrib,1,largest=False) 
-        print(len(self.ksd2_contrib))
+
         self.update_K_info(method='remove_row',removed_row_index=beste)  
         return beste
 
@@ -41,7 +40,6 @@ class PruningContainer:
             self.points = torch.cat([self.points,point.unsqueeze(0)])
             self.gradients = torch.cat([self.gradients,gradient.unsqueeze(0)])
             self.update_K_info(method='add_row')
-            print("WE HAVE THIS POINTS ", len(self.points))
 
         except Exception as e:
             
@@ -193,16 +191,7 @@ class PruningContainer:
         
         if self.points.shape[0]<=min_samples:
             return pruned_samples
-        """
-        test_ksd_squared = self.K_matrix.sum()/(self.K_matrix.shape[0]**2)
-        print("Row sum",self.row_sums)
-        print("K MAT ",self.K_matrix)
-        init_ksd_squared = self.get_ksd_squared()
 
-        print("testing that quick ksd is ok")
-        print(init_ksd_squared,test_ksd_squared)
-        assert torch.allclose(test_ksd_squared,init_ksd_squared)
-        """
         init_ksd_squared = self.get_ksd_squared()
         ksd_squared = init_ksd_squared
         #iteratively prune until cutoff is reached
@@ -238,16 +227,7 @@ class PruningContainer:
 
         if self.points.shape[0]<=min_samples:
             return pruned_samples
-        """
-        test_ksd_squared = self.K_matrix.sum()/(self.K_matrix.shape[0]**2)
-        print("Row sum",self.row_sums)
-        print("K MAT ",self.K_matrix)
-        init_ksd_squared = self.get_ksd_squared()
 
-        print("testing that quick ksd is ok")
-        print(init_ksd_squared,test_ksd_squared)
-        assert torch.allclose(test_ksd_squared,init_ksd_squared)
-        """
         init_ksd_squared = self.get_ksd_squared()
         ksd_squared = init_ksd_squared
         #iteratively prune until cutoff is reached

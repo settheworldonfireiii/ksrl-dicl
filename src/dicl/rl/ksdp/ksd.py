@@ -55,12 +55,7 @@ def get_K_row(samples, gradients, kernel_type, h, index=-1):
     c = (kernel_grads * gradients[index]).sum(1)
 
     d = jacobian_values.sum(1)
-    """
-    print(a)
-    print(b)
-    print(c)
-    print(d)
-    """
+
     row = a + b + c + d
 
     return row
@@ -104,7 +99,7 @@ def get_KSD(samples,
     """
 
     num_samples = samples.shape[0]
-    print("NUM_SAMPLES ", num_samples)
+    #print("NUM_SAMPLES ", num_samples)
     K = get_K_matrix(samples=samples,
                      gradients=gradients,
                      kernel_type=kernel_type,

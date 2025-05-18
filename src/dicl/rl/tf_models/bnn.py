@@ -16,11 +16,10 @@ from scipy.io import savemat, loadmat
 from .utils import get_required_argument, TensorStandardScaler
 from .fc import FC
 
-from .tf_logging import Progress, Silent
+#from .tf_logging import Progress, Silent
 
 np.set_printoptions(precision=5)
 
-import pdb
 class BNN:
     """Neural network models which model aleatoric uncertainty (and possibly epistemic uncertainty
     with ensembling).
@@ -309,7 +308,7 @@ class BNN:
 
     def train(self, inputs, targets,
               batch_size=32, epochs=100,
-              hide_progress=False, holdout_ratio=0.0, max_logging=5000,
+              hide_progress=True, holdout_ratio=0.0, max_logging=5000,
               misc=None):
         """Trains/Continues network training
 

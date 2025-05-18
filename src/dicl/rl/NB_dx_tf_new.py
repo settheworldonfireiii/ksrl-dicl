@@ -73,9 +73,6 @@ class neural_bays_dx_tf(object):
                 tx = _to_np(self.train_x)
                 nx = _to_np(new_x)
                 self.train_x = np.vstack((tx, nx))
-                print(tx.shape)
-                print(nx.shape)
-                print(self.train_x.shape)
                 ty = _to_np(self.train_y)
                 ny = _to_np(new_y)
                 tr = _to_np(self.rew)
@@ -84,7 +81,6 @@ class neural_bays_dx_tf(object):
                 self.train_x = np.vstack((tx, nx))
                             
                 self.train_y = np.vstack((ty, ny))
-                # print (torch.is_tensor(self.train_x))
                 #add rewards
                 self.rew = np.vstack((tr, nr))
                 return self.train_x.shape
@@ -101,9 +97,7 @@ class neural_bays_dx_tf(object):
                 tx = _to_np(self.train_x_s)
                 nx = _to_np(new_x)
                 self.train_x_s = np.vstack((tx, nx))
-                print(tx.shape)
-                print(nx.shape)
-                print(self.train_x_s.shape)
+
                 ty = _to_np(self.train_y_s)
                 ny = _to_np(new_y)
                 tr = _to_np(self.rew_s)
@@ -112,7 +106,6 @@ class neural_bays_dx_tf(object):
                 self.train_x_s = np.vstack((tx, nx))
 
                 self.train_y_s = np.vstack((ty, ny))
-                # print (torch.is_tensor(self.train_x))
                 #add rewards
                 self.rew_s = np.vstack((tr, nr))
                 return self.train_x_s.shape
@@ -130,17 +123,12 @@ class neural_bays_dx_tf(object):
         sort_rew = self.rew.flatten()
         ids_reward = np.argsort(sort_rew)[::-1]
 
-        # print (np.argsort(self.rew)[::-1])
-        # print (np.sort(self.rew)[::-1])
-        # print (sort_rew)
-        # print (self.x.shape, self.y.shape, self.rew)
         
         #get sorted
         self.train_x = self.train_x[ids_reward]
         self.train_y = self.train_y[ids_reward]
         self.rew = self.rew[ids_reward]
 
-        # print (self.train_x.shape)
 
         #subset the samples by taking the top
         total_samples = self.train_x.shape[0]
@@ -159,7 +147,6 @@ class neural_bays_dx_tf(object):
             new_z = self.get_representation(self.train_x)
             self.latent_z = new_z
         else:
-            # print ('the shape is' + str(self.train_x.shape))   ## 200 * 4
             new_z = self.get_representation(self.train_x_s)
             self.latent_z_s = new_z
 
@@ -180,30 +167,12 @@ class neural_bays_dx_tf(object):
         """
         if self.model_type == "SAC":
             z = self.model.predict(input)
-            """
-            print("EXTRACTED")
-            print(input.shape)
-            print(self.model.policy.features_extractor)
-            obs_tensor = torch.as_tensor(input, dtype=torch.float32).to(self.model.device)
-            features = self.model.actor.extract_features(
-                    obs_tensor, self.model.actor.features_extractor
-                    )
-            z_tensor = self.model.policy.actor.latent_pi(features)
-            z = z_tensor.detach().cpu().numpy()
-            """
         else:
             z = self.model.predict(input, layer = True)
         z = z.squeeze()
 
         return z
 
-
-    def check_dim(self):
-        print("prior to sampling, check dim as follows: ")
-        if self.output_shape == 1:
-            print("sampling from cost model")
-        else:
-            print("sampling from transition model")
         
 
 
@@ -226,7 +195,6 @@ class neural_bays_dx_tf(object):
 
         except np.linalg.LinAlgError as e:
             # Sampling could fail if covariance is not positive definite
-            print('Details: {} | {}.'.format(e.message, e.args))
             multivariates = np.random.multivariate_normal(np.zeros((d)), np.eye(d))
             beta_s.append(multivariates)
         self.beta_s = np.array(beta_s)
@@ -262,8 +230,7 @@ class neural_bays_dx_tf(object):
             else:
                 y = self.train_y[:, i] - self.model.layers[len(self.model.layers)-1].biases.eval(session =self.model.sess).squeeze()[i]
             s = np.dot(z.T, z)
-            print(s.shape)
-            # inv = np.linalg.inv((s/self.sigma_n + 1/self.sigma*self.eye))
+
             A = s / self.sigma_n2 + 1 / self.sigma2 * self.eye
             B = np.dot(z.T, y) / self.sigma_n2
             reg_coeff = 0
@@ -277,7 +244,6 @@ class neural_bays_dx_tf(object):
                     inv = np.linalg.inv(A)
                 except Exception as e:
                     # in case computation failed
-                    print(e)
                     reg_coeff += 10
 
                 # Store new posterior distributions using inv
@@ -312,7 +278,6 @@ class neural_bays_dx_tf(object):
             
             except Exception as e:
                 # in case computation failed
-                print(e)
                 reg_coeff += 10
         
         #compute the post var
@@ -321,7 +286,6 @@ class neural_bays_dx_tf(object):
         post_var = np.trace(inv)
         # eig_val, _ = LA.eig(inv)
         # post_var = np.sum(eig_val)
-        # print (post_var)
         
         return post_var
 
@@ -376,7 +340,6 @@ class neural_bays_dx_tf(object):
 
             #concat
             # nabla_z_f = np.hstack(nabla_z)
-            print ("NABLA Z SHAPE ", nabla_z_f.shape)
             
             grad = np.concatenate((nabla_z_f,nabla_y_f), axis=1)
             reg_y = np.squeeze(np.array(reg_y),2).T
@@ -490,7 +453,6 @@ class neural_bays_dx_tf(object):
                 gradients = grad
 
                 check_ksd = ksd.get_KSD(torch.Tensor(smpl), torch.Tensor(grad), kernel_type = 'rbf', h_method = 'dim')
-                print('the ksd is' + str(check_ksd))
 
                 #write : Update pruning container
                 kernel_type = 'rbf'
@@ -528,10 +490,6 @@ class neural_bays_dx_tf(object):
                     batch_samples = batch_samples[idx]
                     batch_gradients = batch_gradients[idx]
                     
-                    #get next
-                    if i == 100:
-                        pdb.set_trace()
-                    print("IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII ", i,"  IIIIIIIIIIIIIIIIIIIIIIIIIIIIIII")
                     next_sample, next_gradient = neural_bays_dx_tf.select_samples(pruning_container=pruning_container,
                                                                 new_samples=batch_samples,
                                                                 new_gradients=batch_gradients,
@@ -562,16 +520,16 @@ class neural_bays_dx_tf(object):
 
                 #get the ids of the pruned samples
                 ids_pruned = [samples.tolist().index(i) for i in pruned_new]
-                print ('ids pruned ', ids_pruned)
+
 
                 #total samples
                 ids_total = list(np.arange(0,self.train_x.shape[0]))
-                print ('ids total ', len(ids_total))
+
 
                 #get the ids to keep
                 ids = [x for x in ids_total if x not in ids_pruned]
 
-                print("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA ", i, "  AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
+
                 #MIGHT NEED TO RE-WORK IT
                 to_retain = []
                 #HARDCODED BATCHSIZE -- BAD -- NEEDS TO BE REDONE
@@ -587,7 +545,6 @@ class neural_bays_dx_tf(object):
             self.train_x = self.train_x[ids]
             self.train_y = self.train_y[ids]
             self.rew = self.rew[ids]
-            print ('after' + str(self.train_x.shape), str(self.train_y.shape))
         else:
                 
             #def thin_data_new(self, thin_type, thin_samples):
@@ -653,7 +610,7 @@ class neural_bays_dx_tf(object):
                 gradients = grad
 
                 check_ksd = ksd.get_KSD(torch.Tensor(smpl), torch.Tensor(grad), kernel_type = 'rbf', h_method = 'dim')
-                print('the ksd is' + str(check_ksd))
+                #print('the ksd is' + str(check_ksd))
 
                 #write : Update pruning container
                 kernel_type = 'rbf'
@@ -670,7 +627,7 @@ class neural_bays_dx_tf(object):
                 #Define the generatpr
                 sample_generator = ((torch.tensor(samples[i:i + 3],dtype=torch.double).to(device),
                 torch.tensor(gradients[i:i + 3], dtype=torch.double).to(device)) for i in range(0, samples.shape[0], 3))
-                print("STEPSTEPSTEPFILLFILLFILL ", samples.shape[0]) 
+
                 #implement new thining
                 addition_rule = 'spmcmc'
                 prune = [False, None]
@@ -686,11 +643,8 @@ class neural_bays_dx_tf(object):
 
                     #part 1
                     _, idx = batch_samples.unique_consecutive(dim=0,return_inverse=True)
-                    print("BATCH SAMPLES IDX IDX UNIQUIE ")
-                    print(idx)
-                    print(batch_samples)
+
                     idx = idx.unique()
-                    print ("IDS UNIQUIE ",idx)
                     batch_samples = batch_samples[idx]
                     batch_gradients = batch_gradients[idx]
 
@@ -702,9 +656,7 @@ class neural_bays_dx_tf(object):
 
 
                     #add to cont
-                    print(next_sample.shape, next_gradient.shape, " NEXT SAMPLE SHAPE NEXT GRADIENT SHAPE")
                     pruning_container.add_point(point=next_sample, gradient=next_gradient)
-                    print("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA ", i, " ", step, "  AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA")
 
                     if exponent>(2.0-1e-10):
                         min_samples = step/2.0
@@ -722,15 +674,15 @@ class neural_bays_dx_tf(object):
                 #clean the pruned samples
 
                 pruned_new = [x[0].cpu().numpy()[0].tolist() for x in pruned_samples if x != []]
-                # print ('pruned ', len(pruned_new))
+
 
                 #get the ids of the pruned samples
                 ids_pruned = [samples.tolist().index(i) for i in pruned_new]
-                print ('ids pruned ', ids_pruned)
+
 
                 #total samples
                 ids_total = list(np.arange(0,self.train_x_s.shape[0]))
-                print ('ids total ', len(ids_total))
+
 
                 #get the ids to keep
                 ids = [x for x in ids_total if x not in ids_pruned]
@@ -975,7 +927,7 @@ class neural_bays_dx_tf(object):
             gradients = grad
 
             check_ksd = ksd.get_KSD(torch.Tensor(smpl), torch.Tensor(grad), kernel_type = 'rbf', h_method = 'dim')
-            print('the ksd is' + str(check_ksd))
+            #print('the ksd is' + str(check_ksd))
 
             #write : Update pruning container
             kernel_type = 'rbf'
@@ -1050,11 +1002,11 @@ class neural_bays_dx_tf(object):
 
             #get the ids of the pruned samples
             ids_pruned = [samples.tolist().index(i) for i in pruned_new]
-            print ('ids pruned ', ids_pruned)
+
 
             #total samples
             ids_total = list(np.arange(0,self.train_x.shape[0]))
-            print ('ids total ', len(ids_total))
+
 
             #get the ids to keep
             ids = [x for x in ids_total if x not in ids_pruned]

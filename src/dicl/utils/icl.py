@@ -72,9 +72,6 @@ class MultiResolutionPDF:
             AssertionError: If the lengths of center_arr, width_arr, and height_arr are
             not equal.
         """
-        # print(len(center_arr))
-        # print(len(width_arr))
-        # print(len(height_arr))
         assert (
             len(center_arr) == len(width_arr) == len(height_arr)
         ), "center_arr, width_arr, height_arr must have the same length"

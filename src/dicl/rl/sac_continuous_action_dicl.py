@@ -464,7 +464,6 @@ class CSVLogger:
     def flush(self):
         if self.buffer:
             with open(self.filename, mode="a", newline="") as csv_file:
-                print(csv_file, " FILE WHERE WE SAVE IT")
                 writer = csv.DictWriter(csv_file, fieldnames=self.fieldnames)
                 writer.writerows(self.buffer)
             self.buffer = []
@@ -598,7 +597,7 @@ def main():
     #actor.load_state_dict(torch.load('runs/HalfCheetah__test_5p_vicl__494__1743916116/actor_checkpoint_1000000.pth', weights_only=True))
     
     actor = actor.to(device)
-    #print(actor.eval())
+
     qf1 = SoftQNetwork(envs).to(device)
     qf2 = SoftQNetwork(envs).to(device)
     qf1_target = SoftQNetwork(envs).to(device)
@@ -659,11 +658,9 @@ def main():
     action_shape = envs.single_action_space.shape[0]
     #pdb.set_trace()
     dx_model = construct_shallow_model(obs_dim=n_observations, act_dim=action_shape, hidden_dim=200, num_networks=1, num_elites=1)
-    print("BEFORE NEURAL BAYS")
+
     my_dx = neural_bays_dx_tf(args, dx_model, "dx", n_observations, sigma_n2=1e-3**2,sigma2=1e1**2)
 
-
-    #print(f'n_observations, whatever it is, {n_observations}')
     # other counters
     started_sampling = False
     step_started_sampling = 0
@@ -672,7 +669,7 @@ def main():
     obs, _ = envs.reset(seed=args.seed)
     episode_step = 0
     global_step = 0
-    pbar = tqdm(total=args.total_timesteps)
+    #pbar = tqdm(total=args.total_timesteps)
     list_model_order = []
     posterior_sigma = []
     ksd_fakes = []
@@ -724,27 +721,15 @@ def main():
                 infos["truncations"] = truncations
                 infos["auxiliary_actions"] = auxiliary_actions
                 global_step += 1
-                pbar.update(1)
+                #pbar.update(1)
 
-                
-                """
-                pdb.set_trace()
-                xu = torch.cat((torch.tensor(obs.squeeze()).double(), torch.tensor(actions.squeeze()).double()))
-                #print("XUXUXU ", xu
-                pdb.set_trace()
-                shappe = my_dx.add_data(new_x=xu, new_y=torch.tensor(next_obs).squeeze() - torch.tensor(obs).squeeze(), new_r = torch.tensor(rewards).squeeze(0))
-                my_dx.train(100)
-                """
+
 
 
                 # TRY NOT TO MODIFY: record rewards for plotting purposes
                 if "final_info" in infos:
                     episode_step = 0
                     for info in infos["final_info"]:
-                        print(
-                            f"global_step={global_step}, "
-                            f"episodic_return={info['episode']['r']}, "
-                        )
                         writer.add_scalar(
                             "charts/episodic_return", info["episode"]["r"], global_step
                         )
@@ -770,7 +755,6 @@ def main():
                 real_next_obs = next_obs.copy()
                 for idx, trunc in enumerate(truncations):
                     if trunc:
-                        print(infos)
                         real_next_obs[idx] = infos["final_observation"][idx]
                 #pdb.set_trace()
                 rb.add(obs, real_next_obs, actions, rewards, terminations, infos)
@@ -800,20 +784,19 @@ def main():
                     # 1. Generate transformed transition
                     # 1.1. Sample sub-trajectory of length 'context_length' from rb
                     where_dones = np.where(np.logical_or(rb.dones, rb.timeouts))[0]
-                    print("DONES ", where_dones)
+
                     starts = np.concatenate([np.array([0]), where_dones + 1], axis=0)
-                    print("STARTS ", starts)
+
                     endings = np.concatenate([where_dones, np.array([rb.pos - 1])], axis=0)
-                    print("ENDINGS ", endings)
+
                     episode_lengths = endings - starts
-                    print("EPISODE LENGTHS ", episode_lengths)
+
                     possible_episodes = starts[
                         np.argwhere(episode_lengths > args.context_length + 1)
                     ]
                     possible_episodes_endings = endings[
                         np.argwhere(episode_lengths > args.context_length + 1)
                     ]
-                    print("POSSIBLE EPS ", possible_episodes)
                     
                     if ((global_step + local_step) % args.llm_learning_frequency == 0) and (
                         len(possible_episodes) >= args.min_episodes_to_start_icl
@@ -825,10 +808,7 @@ def main():
                                 f"{args.path}/runs/{run_name}/icl_started.txt", "w"
                             ) as f:
                                 f.write(f"icl started at: {(global_step + local_step)}")
-                            print(
-                                f"---------- icl started at: {(global_step + local_step)} "
-                                "-----------"
-                            )
+
                         random_idx = np.random.randint(0, len(possible_episodes))
                         start_episode = int(possible_episodes[random_idx])
                         start_index = int(
@@ -941,48 +921,18 @@ def main():
                                 xu = torch.cat((torch.tensor(tf.get_static_value(batches_to_train_on[0].observations[i].squeeze().cpu())).double(), torch.tensor(tf.get_static_value(batches_to_train_on[0].actions[i].cpu())).double()))
                             else:
                                 xu = torch.cat((torch.tensor(tf.get_static_value(batches_to_train_on[0].observations[i].squeeze().cpu())).double(), torch.tensor(tf.get_static_value(batches_to_train_on[0].actions[i].squeeze().cpu())).double()))
-                            #print("XUXUXU ", xu)
-                            #pdb.set_trace()
                             shappe = my_dx.add_data(new_x=xu, new_y=torch.tensor(tf.get_static_value(batches_to_train_on[0].next_observations[i].cpu())).squeeze() - torch.tensor(tf.get_static_value(batches_to_train_on[0].observations[i].cpu())).squeeze(), new_r = torch.tensor(tf.get_static_value(batches_to_train_on[0].rewards[i].cpu())).squeeze(0))
                         #if (global_step + local_step)%200 == 0:
                         my_dx.sample() 
                         #my_dx.generate_latent_z()
                         #ksd_val = my_dx.get_ksd('ksd')
                         print("KSD VAL", ksd_val)
+                        #writer.add_scalar("charts/qf1_values", ksd_val.mean().item(), global_step)
 
-                        """
-                            my_dx.train(100)
-                            print("TRAINED LIKE IN AKHMAT!")
-                            post_var = my_dx.update_bays_reg()
-                            print (np.trace(post_var[0]))
-
-                            posterior_sigma.append(np.trace(post_var[0]))
-                            print("POSTERIOR SIGMA ", posterior_sigma)
-                            ksd_val = my_dx.get_ksd('ksd')
-                        
-                        
-                        if (global_step+local_step) % 1000 == 0:
-                            print("GLOBAL STEP ", global_step)
-                            print("LOCAL STEP ", local_step)
-                            pdb.set_trace()
-                            my_dx.train(100)
-                            post_var = my_dx.update_bays_reg()
-                            ksd_val = my_dx.get_ksd('ksd')
-                            print("KSD VAL", ksd_val)
-                        """
-                        print("GLOBAL STEP ", global_step)
-                        print("LOCAL STEP ", local_step)
-                        print("DID WE START SAMPLING ", started_sampling)
-                        print("WHEN DID WE START SAMPLING ", step_started_sampling)
                         my_dx.train(100)
-                        #pdb.set_trace()
-                        #print("TRAINED LIKE IN AKHMAT!")
+
                     
                         post_var = my_dx.update_bays_reg()
-                        #print (np.trace(post_var[0]))
-                       
-                        #posterior_sigma.append(np.trace(post_var[0]))
-                        #print("POSTERIOR SIGMA ", posterior_sigma)
                         ksd_val = my_dx.thin_data_new('ksd')
                         ksd_trues.append(ksd_val)
                         print("KSD VAL", ksd_val)
@@ -1006,7 +956,6 @@ def main():
                             batches_to_train_on = [copy.copy(data_llm)]
                             coeff_batches_to_train_on = [1.0]
                         else:
-                            print("BATCHES TO TRAIN ON ", batches_to_train_on)
                             #pdb.set_trace()
                             
                             #batches_to_train_on.append(copy.copy(data_llm))
@@ -1023,54 +972,14 @@ def main():
                                         xu = torch.cat((torch.tensor(tf.get_static_value(data_llm.observations[i].squeeze().cpu())).double(), torch.tensor(tf.get_static_value(data_llm.actions[i].cpu())).double()))
                                     else:
                                         xu = torch.cat((torch.tensor(tf.get_static_value(data_llm.observations[i].squeeze().cpu())).double(), torch.tensor(tf.get_static_value(data_llm.actions[i].squeeze().cpu())).double()))
-                                    #print("XUXUXU ", xu)
-                                    #pdb.set_trace()
+
                                     shappe = my_dx.add_synth_data(new_x=xu, new_y=torch.tensor(tf.get_static_value(data_llm.next_observations[i].cpu())).squeeze() - torch.tensor(tf.get_static_value(data_llm.observations[i].cpu())).squeeze(), new_r = torch.tensor(tf.get_static_value(data_llm.rewards[i].cpu())).squeeze(0))
-                                #if (global_step + local_step)%200 == 0:
-                                #my_dx.sample()
-                                #my_dx.generate_latent_z()
-                                #ksd_val = my_dx.get_ksd('ksd')
-                                #print("KSD VAL", ksd_val)
-
-                                """
-                                    my_dx.train(100)
-                                    print("TRAINED LIKE IN AKHMAT!")
-                                    post_var = my_dx.update_bays_reg()
-                                    print (np.trace(post_var[0]))
-
-                                    posterior_sigma.append(np.trace(post_var[0]))
-                                    print("POSTERIOR SIGMA ", posterior_sigma)
-                                    ksd_val = my_dx.get_ksd('ksd')
-                                
-                                
-                                if (global_step+local_step) % 1000 == 0:
-                                    print("GLOBAL STEP ", global_step)
-                                    print("LOCAL STEP ", local_step)
-                                    pdb.set_trace()
-                                    my_dx.train(100)
-                                    post_var = my_dx.update_bays_reg()
-                                    ksd_val = my_dx.get_ksd('ksd')
-                                    print("KSD VAL", ksd_val)
-                                """
-                                print("GLOBAL STEP ADDING SYNTH ", global_step)
-                                print("LOCAL STEP ADDING SYNTH ", local_step)
-                                #my_dx.train(100)
-                                #pdb.set_trace()
-                                #print("TRAINED LIKE IN AKHMAT!")
-
-                                #post_var = my_dx.update_bays_reg()
-                                #print (np.trace(post_var[0]))
-
-                                #posterior_sigma.append(np.trace(post_var[0]))
-                                #print("POSTERIOR SIGMA ", posterior_sigma)
-                                
+ 
                                 ksd_val_s, ids_rem = my_dx.thin_data_synthetic_new('ksd', args.llm_batch_size)
                                 ksd_fakes.append(ksd_val_s)
                   
                                 print("KSD VAL SYNTH", ksd_val)
-                                print("IDS REMAINING ", ids_rem)
-                                print("OBS SHAPE ", data_llm.observations.shape)
-                                #pdb.set_trace()
+                                
                                 obs_l = data_llm.observations[ids_rem]
                                 next_obs_l = data_llm.next_observations[ids_rem]
                                 actions_l = data_llm.actions[ids_rem]
@@ -1089,66 +998,11 @@ def main():
                                 batches_to_train_on.append(copy.copy(data_x))
 
 
-                                #coeff_batches_to_train_on = [1.0]
-
-                            
-                            """
-                            if ((global_step + local_step) % 25 == 0) or erstens:
-                                  
-                                for i in range(data_llm.observations.shape[0]):
-
-                                    xu = torch.cat((torch.tensor(tf.get_static_value(data_llm.observations[i].squeeze().cpu())).double(), torch.tensor(tf.get_static_value(data_llm.actions[i].squeeze().cpu())).double()))
-                                    print("XUXUXU ", xu)
-                                    #pdb.set_trace()
-                                    shappe = my_dx.add_data(new_x=xu, new_y=torch.tensor(tf.get_static_value(data_llm.next_observations[i].cpu())).squeeze() - torch.tensor(tf.get_static_value(data_llm.observations[i].cpu())).squeeze(), new_r = torch.tensor(tf.get_static_value(data_llm.rewards[i].cpu())).squeeze(0), real = False)
-                                    print("SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS")
-                                    #batches_to_train_on = [merge_and_shuffle_samples(data,data_llm)] 
-                            # 71
-                            if ((global_step + local_step) % 25  == 0) or erstens:
-                                print("GLOBAL STEP ", global_step)
-                                print("LOCAL STEP ", local_step)
-     
-
-                                print("TRAINED LIKE IN AKHMAT!")
-                                
-                                post_var = my_dx.update_bays_reg()
-                                print (np.trace(post_var[0]))
-
-                                posterior_sigma.append(np.trace(post_var[0]))
-                                
-                                my_dx.generate_latent_z(False)
-                                print("POSTERIOR SIGMA ", posterior_sigma)
-                                ksd_val_s = my_dx.get_ksd('ksd', False)
-                                print("KSD VAL FAKE", ksd_val_s)
-                                erstens = False
-                                
-                                indices = my_dx.thin_data_new("ksd", False)
-                                #pdb.set_trace()
-                                inds = torch.cat(indices, dim=0).cpu().numpy()
-                                obs_l = data_llm.observations[inds] 
-                                next_obs_l = data_llm.next_observations[inds] 
-                                actions_l = data_llm.actions[inds]
-                                rewards_l  = data_llm.rewards[inds] 
-                                dones_l = data_llm.dones[inds]
-                                data_llm = ReplayBufferSamples(
-                                    observations=obs_l,
-                                    next_observations=next_obs_l,
-                                    actions=actions_l,
-                                    rewards=rewards_l,
-                                    dones=dones_l
-                                    )
-                                
-                                batches_to_train_on.append(copy.copy(data_llm))
-                                
-                                coeff_batches_to_train_on.append(float(args.llm_batch_size / args.batch_size))
-                                """
-
                     # --------------------------------------------
                     iterator = 0
                 
                     for data, p in zip(batches_to_train_on, coeff_batches_to_train_on):
-                        #print(f'local_step {local_step} global step {global_step} target network frequency {args.target_network_frequency} llm learning frequency {args.llm_learning_frequency} policy frequency {args.policy_frequency}')
-                        #pdb.set_trace()
+
                         iterator += 1
                         with torch.no_grad():
                             next_state_actions, next_state_log_pi, next_state_mean = actor.get_action(
@@ -1160,12 +1014,7 @@ def main():
                             def logprob_sum(stat):
                                 mean, std = stat
                                 return (torch.distributions.Normal(mean, std)).logprob(mean).sum()
-                            """
-                            next_state_pi = next_state_log_pi.exp()
-                            tupleparam = [next_state_mean, next_state_pi]
-                            hess = torch.autograd.functional.hessian(logprob_sum, tupleparam)[0][0]
-                            cov = torch.inverse(hess + 1e-4 * torch.eye(hess.size(-1)))
-                            """
+
                             qf1_next_target = qf1_target(
                                 data.next_observations, next_state_actions
                             )
@@ -1180,25 +1029,7 @@ def main():
                                 1 - data.dones.flatten()
                             ) * args.gamma * (min_qf_next_target).view(-1)
                         #MOVE TO #3. Sample from rb ... AND GET KSD AND THIN THERE.
-                        """
-                        if (global_step+local_step)%1000 == 0:
-                                print("GOT SHAPE!")
-                                print("GLOBAL_STEP ", global_step)
-                                print("LOCAL_STEP ", local_step)
-                                my_dx.train(100)
-                                print("TRAINED LIKE IN AKHMAT!")
-                                post_var = my_dx.update_bays_reg()
-                                print (np.trace(post_var[0]))
 
-                                posterior_sigma.append(np.trace(post_var[0]))
-                                print("POSTERIOR SIGMA ", posterior_sigma)
-                                ksd_val = my_dx.get_ksd('ksd')
-                                print("KSD val ", ksd_val)
-                                print("ITERATOR ", iterator)
-                                print("LOCAL STEP ", local_step)
-                                to_del = my_dx.thin_data_new("ksd")
-                                rb.delete(to_del)
-                        """
             
                         qf1_a_values = qf1(data.observations, data.actions).view(-1)
                         qf2_a_values = qf2(data.observations, data.actions).view(-1)
@@ -1210,22 +1041,8 @@ def main():
                         else:
                             qf_loss = p * (qf1_loss + qf2_loss)
                     
-                        #qf_loss = p * (qf1_loss + qf2_loss)
-                        print("QF LOSS ", qf_loss) 
 
-                        """
-                        KSD = 
-                        qf1_a_values = qf1(data.observations + KSD, data.actions).view(-1) here KSD is a vector
-                        qf2_a_values = qf2(data.observations + KSD, data.actions).view(-1) here KSD is a vector
-                        
-                        # OR
-                        qf1_loss = F.mse_loss(qf1_a_values, next_q_value) + KSD #if added here, KSD is a scalar
-                        qf2_loss = F.mse_loss(qf2_a_values, next_q_value) + KSD #if added here, KSD is a scalar
-                        
-                        #OR
-                        qf_loss = p * (qf1_loss + qf2_loss) + KSD # if added here, KSD is a scalar
 
-                        """
 
                         # optimize the model
                         q_optimizer.zero_grad()
@@ -1304,23 +1121,9 @@ def main():
                                 "losses/alpha_loss", alpha_loss.item(), global_step
                             )
                     local_step += 1
-            """
-            if global_step % 1000 == 0 and xu is not None: 
-                list_model_order.append(my_dx.get_shape())
-                
-                print("GOT SHAPE!")
-                my_dx.train(100)
-                print("TRAINED LIKE IN AKHMAT!")
-                post_var = my_dx.update_bays_reg()
-                print (np.trace(post_var[0]))
-        
-                posterior_sigma.append(np.trace(post_var[0]))
-                print("POSTERIOR SIGMA ", posterior_sigma)
-                ksd_val = my_dx.thin_data_new('ksd')
-            print("KSD val ", ksd_val)
-        """ 
 
-    pbar.close()
+
+    #pbar.close()
     envs.close()
     writer.close()
     csv_logger.flush()
