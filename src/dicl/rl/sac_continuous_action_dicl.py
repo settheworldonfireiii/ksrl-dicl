@@ -179,7 +179,7 @@ class Args:
     """automatic tuning of the entropy coefficient"""
 
     # Custom
-    save_policy_checkpoints: int = 20000
+    save_policy_checkpoints: int = 10000
     """frequency of saving policy checkpoints"""
     act_deterministically: bool = False
     """whether to act deterministically"""
@@ -926,16 +926,14 @@ def main():
                         my_dx.sample() 
                         #my_dx.generate_latent_z()
                         #ksd_val = my_dx.get_ksd('ksd')
-                        print("KSD VAL", ksd_val)
-                        #writer.add_scalar("charts/qf1_values", ksd_val.mean().item(), global_step)
-
+                        
                         my_dx.train(100)
-
                     
                         post_var = my_dx.update_bays_reg()
                         ksd_val = my_dx.thin_data_new('ksd')
                         ksd_trues.append(ksd_val)
                         print("KSD VAL", ksd_val)
+                        writer.add_scalar("charts/KSD_VALID", ksd_val.mean().item(), global_step)
                         #coeff_batches_to_train_on = [1.0]
                         
                     # 3. Sample from rb and transformed_rb to train ActorCritic
@@ -978,6 +976,7 @@ def main():
                                 ksd_val_s, ids_rem = my_dx.thin_data_synthetic_new('ksd', args.llm_batch_size)
                                 ksd_fakes.append(ksd_val_s)
                   
+                                writer.add_scalar("charts/KSD_SYNTH", ksd_val.mean().item(), global_step)
                                 print("KSD VAL SYNTH", ksd_val)
                                 
                                 obs_l = data_llm.observations[ids_rem]
