@@ -1,0 +1,741 @@
+2025-05-07 17:59:55.619676: E external/local_xla/xla/stream_executor/cuda/cuda_fft.cc:485] Unable to register cuFFT factory: Attempting to register factory for plugin cuFFT when one has already been registered
+2025-05-07 17:59:56.405005: E external/local_xla/xla/stream_executor/cuda/cuda_dnn.cc:8454] Unable to register cuDNN factory: Attempting to register factory for plugin cuDNN when one has already been registered
+2025-05-07 17:59:56.500310: E external/local_xla/xla/stream_executor/cuda/cuda_blas.cc:1452] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered
+2025-05-07 17:59:57.288373: I tensorflow/core/platform/cpu_feature_guard.cc:210] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
+To enable the following instructions: AVX2 FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
+2025-05-07 18:00:05.701176: W tensorflow/compiler/tf2tensorrt/utils/py_utils.cc:38] TF-TRT Warning: Could not find TensorRT
+WARNING:tensorflow:From /scratch.global/radke149/dicl-ksrl/lib/python3.9/site-packages/tensorflow/python/compat/v2_compat.py:98: disable_resource_variables (from tensorflow.python.ops.resource_variables_toggle) is deprecated and will be removed in a future version.
+Instructions for updating:
+non-resource variables are not supported in the long term
+2025-05-07 18:00:47.823059: I tensorflow/compiler/mlir/mlir_graph_optimization_pass.cc:388] MLIR V1 optimization pass is not enabled
+/users/2/radke149/budgeting_vllm
+[ BNN ] Observation dim 17 | Action dim: 6 | Hidden dim: 200
+[ BNN ] Initializing model: BNN | 1 networks | 1 elites
+Created a neural network with variance predictions.
+BEFORE NEURAL BAYS
+  0%|          | 0/100000 [00:00<?, ?it/s]  0%|          | 126/100000 [00:00<01:23, 1189.24it/s]  0%|          | 427/100000 [00:00<00:44, 2232.37it/s]  1%|          | 821/100000 [00:00<00:33, 2998.98it/s]  1%|          | 1124/100000 [00:00<00:33, 2965.48it/s]  1%|▏         | 1443/100000 [00:00<00:32, 3044.54it/s]  2%|▏         | 1845/100000 [00:00<00:29, 3372.69it/s]  2%|▏         | 2184/100000 [00:00<00:31, 3133.21it/s]  3%|▎         | 2506/100000 [00:00<00:30, 3158.17it/s]  3%|▎         | 2906/100000 [00:00<00:28, 3410.70it/s]  3%|▎         | 3250/100000 [00:01<00:35, 2728.79it/s]  4%|▎         | 3652/100000 [00:01<00:31, 3056.73it/s]  4%|▍         | 4021/100000 [00:01<00:29, 3223.83it/s]  4%|▍         | 4415/100000 [00:01<00:27, 3419.44it/s]  5%|▍         | 4837/100000 [00:01<00:26, 3645.39it/s]  5%|▌         | 5214/100000 [00:01<00:42, 2208.81it/s]  6%|▌         | 5511/100000 [00:02<00:53, 1763.53it/s]  6%|▌         | 5752/100000 [00:02<01:00, 1557.59it/s]  6%|▌         | 5954/100000 [00:02<01:05, 1433.60it/s]WARNING:tensorflow:From /scratch.global/radke149/gpt2mla/ksrl_dicl/src/dicl/rl/tf_models/utils.py:52: Variable.load (from tensorflow.python.ops.variables) is deprecated and will be removed in a future version.
+Instructions for updating:
+Prefer Variable.assign which has equivalent behavior in 2.X.
+global_step=1000, episodic_return=[-283.59137], 
+<_io.TextIOWrapper name='./runs/HalfCheetah-v4__test_5p_dicl_s_pca_cl300__seed_42_shuffled__42__1746658841/logs.csv' mode='a' encoding='UTF-8'>  FILE WHERE WE SAVE IT
+{'final_observation': array([array([-0.57404,  3.30887,  0.33601,  0.0315 , -0.04428,  0.17874,
+               0.37294,  0.43828,  0.06288,  0.08478,  0.17608, -3.43654,
+               1.29255,  6.68938,  2.66216,  1.52526,  2.76706])         ],
+      dtype=object), '_final_observation': array([ True]), 'final_info': array([{'x_position': -4.150213290785552, 'x_velocity': 0.03391239185221551, 'reward_run': 0.03391239185221551, 'reward_ctrl': -0.1435839891433716, 'episode': {'r': array([-283.59137], dtype=float32), 'l': array([1000], dtype=int32), 't': array([0.35352], dtype=float32)}}],
+      dtype=object), '_final_info': array([ True]), 'truncations': array([ True]), 'auxiliary_actions': array([[ 0.14392, -0.24744,  0.16136,  0.63186,  0.72247,  0.63769]],
+      dtype=float32)}
+global_step=2000, episodic_return=[-425.17236], 
+<_io.TextIOWrapper name='./runs/HalfCheetah-v4__test_5p_dicl_s_pca_cl300__seed_42_shuffled__42__1746658841/logs.csv' mode='a' encoding='UTF-8'>  FILE WHERE WE SAVE IT
+{'final_observation': array([array([-0.17031,  0.06354,  0.02042,  0.38482, -0.05305, -0.45824,
+               0.06338, -0.29882, -1.30732,  0.16274, -2.02797, -5.66617,
+               8.56638, -7.0425 , -2.56024,  4.34846,  5.58343])         ],
+      dtype=object), '_final_observation': array([ True]), 'final_info': array([{'x_position': -11.248830471501375, 'x_velocity': -1.0535245398000725, 'reward_run': -1.0535245398000725, 'reward_ctrl': -0.2152395248413086, 'episode': {'r': array([-425.17236], dtype=float32), 'l': array([1000], dtype=int32), 't': array([0.29639], dtype=float32)}}],
+      dtype=object), '_final_info': array([ True]), 'truncations': array([ True]), 'auxiliary_actions': array([[-0.71161,  0.60941, -0.8807 , -0.19029,  0.63863,  0.23437]],
+      dtype=float32)}
+global_step=3000, episodic_return=[-266.56305], 
+<_io.TextIOWrapper name='./runs/HalfCheetah-v4__test_5p_dicl_s_pca_cl300__seed_42_shuffled__42__1746658841/logs.csv' mode='a' encoding='UTF-8'>  FILE WHERE WE SAVE IT
+{'final_observation': array([array([-1.04525e-01, -3.63212e-02,  7.06279e-02,  1.41022e-01,
+              -1.15464e-01, -5.10317e-01, -7.06207e-04, -4.39546e-01,
+              -5.93314e-01,  9.14542e-01,  3.83507e+00, -5.84833e+00,
+              -8.16018e+00,  9.81567e+00, -7.22660e-01,  2.79382e+00,
+              -6.94769e+00])                                         ],
+      dtype=object), '_final_observation': array([ True]), 'final_info': array([{'x_position': -3.3565765535289414, 'x_velocity': -0.857186101825631, 'reward_run': -0.857186101825631, 'reward_ctrl': -0.19762083292007449, 'episode': {'r': array([-266.56305], dtype=float32), 'l': array([1000], dtype=int32), 't': array([0.3125], dtype=float32)}}],
+      dtype=object), '_final_info': array([ True]), 'truncations': array([ True]), 'auxiliary_actions': array([[-0.71659, -0.83613,  0.27576,  0.18972,  0.71723, -0.37032]],
+      dtype=float32)}
+global_step=4000, episodic_return=[-189.18517], 
+<_io.TextIOWrapper name='./runs/HalfCheetah-v4__test_5p_dicl_s_pca_cl300__seed_42_shuffled__42__1746658841/logs.csv' mode='a' encoding='UTF-8'>  FILE WHERE WE SAVE IT
+{'final_observation': array([array([-8.67811e-02, -8.37641e-02,  3.29539e-01,  5.63544e-02,
+              -1.06661e-01,  2.87923e-01,  2.15532e-02,  1.23608e-02,
+               6.30954e-01,  1.17355e+00,  2.44305e+00,  1.01407e+01,
+              -1.57345e+01, -7.30478e+00,  3.57917e+00, -9.57739e+00,
+               2.06521e+00])                                         ],
+      dtype=object), '_final_observation': array([ True]), 'final_info': array([{'x_position': 0.5988485754535667, 'x_velocity': 0.32144260433289995, 'reward_run': 0.32144260433289995, 'reward_ctrl': -0.1802575707435608, 'episode': {'r': array([-189.18517], dtype=float32), 'l': array([1000], dtype=int32), 't': array([0.34424], dtype=float32)}}],
+      dtype=object), '_final_info': array([ True]), 'truncations': array([ True]), 'auxiliary_actions': array([[ 0.8567 , -0.71038, -0.28858,  0.56598, -0.38389, -0.1141 ]],
+      dtype=float32)}
+global_step=5000, episodic_return=[-283.5438], 
+<_io.TextIOWrapper name='./runs/HalfCheetah-v4__test_5p_dicl_s_pca_cl300__seed_42_shuffled__42__1746658841/logs.csv' mode='a' encoding='UTF-8'>  FILE WHERE WE SAVE IT
+{'final_observation': array([array([-1.64668e-01,  2.82449e-02,  6.72265e-01,  2.19525e-01,
+              -5.31216e-03,  3.78937e-01, -8.92522e-02, -5.35639e-01,
+               1.83901e-01, -1.28140e+00, -4.60021e+00,  7.80786e+00,
+               2.78010e+00,  3.11272e+00,  1.87992e+00,  8.81246e+00,
+              -7.81955e-01])                                         ],
+      dtype=object), '_final_observation': array([ True]), 'final_info': array([{'x_position': -4.131188333276659, 'x_velocity': 0.7647212884684151, 'reward_run': 0.7647212884684151, 'reward_ctrl': -0.24384987354278564, 'episode': {'r': array([-283.5438], dtype=float32), 'l': array([1000], dtype=int32), 't': array([0.25098], dtype=float32)}}],
+      dtype=object), '_final_info': array([ True]), 'truncations': array([ True]), 'auxiliary_actions': array([[ 0.88857,  0.47235,  0.09569,  0.20139,  0.94562, -0.6942 ]],
+      dtype=float32)}
+global_step=6000, episodic_return=[-51.46671], 
+<_io.TextIOWrapper name='./runs/HalfCheetah-v4__test_5p_dicl_s_pca_cl300__seed_42_shuffled__42__1746658841/logs.csv' mode='a' encoding='UTF-8'>  FILE WHERE WE SAVE IT
+{'final_observation': array([array([-0.10923,  0.0697 , -0.02567, -0.02163,  0.08966, -0.14871,
+              -0.05047, -0.21265, -0.48351, -0.06687,  1.0014 , -3.69705,
+               0.08421,  4.67687, -2.76475, -3.63959,  3.78332])         ],
+      dtype=object), '_final_observation': array([ True]), 'final_info': array([{'x_position': 0.6497528248297239, 'x_velocity': -0.40996497168535484, 'reward_run': -0.40996497168535484, 'reward_ctrl': -0.042614662647247316, 'episode': {'r': array([-51.46671], dtype=float32), 'l': array([1000], dtype=int32), 't': array([1.00781], dtype=float32)}}],
+      dtype=object), '_final_info': array([ True]), 'truncations': array([ True]), 'auxiliary_actions': array([[-0.20985,  0.46111,  0.19125,  0.36927,  0.04704, -0.20437]],
+      dtype=float32)}
+(23,)
+(23,)
+(2, 23)
+(2, 23)
+(23,)
+(3, 23)
+(3, 23)
+(23,)
+(4, 23)
+(4, 23)
+(23,)
+(5, 23)
+(5, 23)
+(23,)
+(6, 23)
+(6, 23)
+(23,)
+(7, 23)
+(7, 23)
+(23,)
+(8, 23)
+(8, 23)
+(23,)
+(9, 23)
+(9, 23)
+(23,)
+(10, 23)
+(10, 23)
+(23,)
+(11, 23)
+(11, 23)
+(23,)
+(12, 23)
+(12, 23)
+(23,)
+(13, 23)
+(13, 23)
+(23,)
+(14, 23)
+(14, 23)
+(23,)
+(15, 23)
+(15, 23)
+(23,)
+(16, 23)
+(16, 23)
+(23,)
+(17, 23)
+(17, 23)
+(23,)
+(18, 23)
+(18, 23)
+(23,)
+(19, 23)
+(19, 23)
+(23,)
+(20, 23)
+(20, 23)
+(23,)
+(21, 23)
+(21, 23)
+(23,)
+(22, 23)
+(22, 23)
+(23,)
+(23, 23)
+(23, 23)
+(23,)
+(24, 23)
+(24, 23)
+(23,)
+(25, 23)
+(25, 23)
+(23,)
+(26, 23)
+(26, 23)
+(23,)
+(27, 23)
+(27, 23)
+(23,)
+(28, 23)
+(28, 23)
+(23,)
+(29, 23)
+(29, 23)
+(23,)
+(30, 23)
+(30, 23)
+(23,)
+(31, 23)
+(31, 23)
+(23,)
+(32, 23)
+(32, 23)
+(23,)
+(33, 23)
+(33, 23)
+(23,)
+(34, 23)
+(34, 23)
+(23,)
+(35, 23)
+(35, 23)
+(23,)
+(36, 23)
+(36, 23)
+(23,)
+(37, 23)
+(37, 23)
+(23,)
+(38, 23)
+(38, 23)
+(23,)
+(39, 23)
+(39, 23)
+(23,)
+(40, 23)
+(40, 23)
+(23,)
+(41, 23)
+(41, 23)
+(23,)
+(42, 23)
+(42, 23)
+(23,)
+(43, 23)
+(43, 23)
+(23,)
+(44, 23)
+(44, 23)
+(23,)
+(45, 23)
+(45, 23)
+(23,)
+(46, 23)
+(46, 23)
+(23,)
+(47, 23)
+(47, 23)
+(23,)
+(48, 23)
+(48, 23)
+(23,)
+(49, 23)
+(49, 23)
+(23,)
+(50, 23)
+(50, 23)
+(23,)
+(51, 23)
+(51, 23)
+(23,)
+(52, 23)
+(52, 23)
+(23,)
+(53, 23)
+(53, 23)
+(23,)
+(54, 23)
+(54, 23)
+(23,)
+(55, 23)
+(55, 23)
+(23,)
+(56, 23)
+(56, 23)
+(23,)
+(57, 23)
+(57, 23)
+(23,)
+(58, 23)
+(58, 23)
+(23,)
+(59, 23)
+(59, 23)
+(23,)
+(60, 23)
+(60, 23)
+(23,)
+(61, 23)
+(61, 23)
+(23,)
+(62, 23)
+(62, 23)
+(23,)
+(63, 23)
+(63, 23)
+(23,)
+(64, 23)
+(64, 23)
+(23,)
+(65, 23)
+(65, 23)
+(23,)
+(66, 23)
+(66, 23)
+(23,)
+(67, 23)
+(67, 23)
+(23,)
+(68, 23)
+(68, 23)
+(23,)
+(69, 23)
+(69, 23)
+(23,)
+(70, 23)
+(70, 23)
+(23,)
+(71, 23)
+(71, 23)
+(23,)
+(72, 23)
+(72, 23)
+(23,)
+(73, 23)
+(73, 23)
+(23,)
+(74, 23)
+(74, 23)
+(23,)
+(75, 23)
+(75, 23)
+(23,)
+(76, 23)
+(76, 23)
+(23,)
+(77, 23)
+(77, 23)
+(23,)
+(78, 23)
+(78, 23)
+(23,)
+(79, 23)
+(79, 23)
+(23,)
+(80, 23)
+(80, 23)
+(23,)
+(81, 23)
+(81, 23)
+(23,)
+(82, 23)
+(82, 23)
+(23,)
+(83, 23)
+(83, 23)
+(23,)
+(84, 23)
+(84, 23)
+(23,)
+(85, 23)
+(85, 23)
+(23,)
+(86, 23)
+(86, 23)
+(23,)
+(87, 23)
+(87, 23)
+(23,)
+(88, 23)
+(88, 23)
+(23,)
+(89, 23)
+(89, 23)
+(23,)
+(90, 23)
+(90, 23)
+(23,)
+(91, 23)
+(91, 23)
+(23,)
+(92, 23)
+(92, 23)
+(23,)
+(93, 23)
+(93, 23)
+(23,)
+(94, 23)
+(94, 23)
+(23,)
+(95, 23)
+(95, 23)
+(23,)
+(96, 23)
+(96, 23)
+(23,)
+(97, 23)
+(97, 23)
+(23,)
+(98, 23)
+(98, 23)
+(23,)
+(99, 23)
+(99, 23)
+(23,)
+(100, 23)
+(100, 23)
+(23,)
+(101, 23)
+(101, 23)
+(23,)
+(102, 23)
+(102, 23)
+(23,)
+(103, 23)
+(103, 23)
+(23,)
+(104, 23)
+(104, 23)
+(23,)
+(105, 23)
+(105, 23)
+(23,)
+(106, 23)
+(106, 23)
+(23,)
+(107, 23)
+(107, 23)
+(23,)
+(108, 23)
+(108, 23)
+(23,)
+(109, 23)
+(109, 23)
+(23,)
+(110, 23)
+(110, 23)
+(23,)
+(111, 23)
+(111, 23)
+(23,)
+(112, 23)
+(112, 23)
+(23,)
+(113, 23)
+(113, 23)
+(23,)
+(114, 23)
+(114, 23)
+(23,)
+(115, 23)
+(115, 23)
+(23,)
+(116, 23)
+(116, 23)
+(23,)
+(117, 23)
+(117, 23)
+(23,)
+(118, 23)
+(118, 23)
+(23,)
+(119, 23)
+(119, 23)
+(23,)
+(120, 23)
+(120, 23)
+(23,)
+(121, 23)
+(121, 23)
+(23,)
+(122, 23)
+(122, 23)
+(23,)
+(123, 23)
+(123, 23)
+(23,)
+(124, 23)
+(124, 23)
+(23,)
+(125, 23)
+(125, 23)
+(23,)
+(126, 23)
+(126, 23)
+(23,)
+(127, 23)
+(127, 23)
+(23,)
+(128, 23)
+GLOBAL STEP  6000
+LOCAL STEP  0
+
+Network training:   0%|          | 0/100 [00:00<?, ?epoch(s)/s][A
+Network training:   0%|          | 0/100 [00:00<?, ?epoch(s)/s, Training loss(es)=[26.17374]][A
+Network training:   1%|          | 1/100 [00:00<00:26,  3.73epoch(s)/s, Training loss(es)=[26.17374]][A
+Network training:   1%|          | 1/100 [00:00<00:26,  3.73epoch(s)/s, Training loss(es)=[26.15582]][A
+Network training:   1%|          | 1/100 [00:00<00:26,  3.73epoch(s)/s, Training loss(es)=[26.13468]][A
+Network training:   1%|          | 1/100 [00:00<00:26,  3.73epoch(s)/s, Training loss(es)=[26.0995]] [A
+Network training:   1%|          | 1/100 [00:00<00:26,  3.73epoch(s)/s, Training loss(es)=[26.04351]][A
+Network training:   1%|          | 1/100 [00:00<00:26,  3.73epoch(s)/s, Training loss(es)=[25.94538]][A
+Network training:   1%|          | 1/100 [00:00<00:26,  3.73epoch(s)/s, Training loss(es)=[25.77614]][A
+Network training:   1%|          | 1/100 [00:00<00:26,  3.73epoch(s)/s, Training loss(es)=[25.50257]][A
+Network training:   1%|          | 1/100 [00:00<00:26,  3.73epoch(s)/s, Training loss(es)=[25.1656]] [A
+Network training:   1%|          | 1/100 [00:00<00:26,  3.73epoch(s)/s, Training loss(es)=[24.84526]][A
+Network training:   1%|          | 1/100 [00:00<00:26,  3.73epoch(s)/s, Training loss(es)=[24.64117]][A
+Network training:   1%|          | 1/100 [00:00<00:26,  3.73epoch(s)/s, Training loss(es)=[24.54558]][A
+Network training:   1%|          | 1/100 [00:00<00:26,  3.73epoch(s)/s, Training loss(es)=[24.50667]][A
+Network training:   1%|          | 1/100 [00:00<00:26,  3.73epoch(s)/s, Training loss(es)=[24.47408]][A
+Network training:   1%|          | 1/100 [00:00<00:26,  3.73epoch(s)/s, Training loss(es)=[24.41264]][A
+Network training:   1%|          | 1/100 [00:00<00:26,  3.73epoch(s)/s, Training loss(es)=[24.28407]][A
+Network training:   1%|          | 1/100 [00:00<00:26,  3.73epoch(s)/s, Training loss(es)=[24.12066]][A
+Network training:   1%|          | 1/100 [00:00<00:26,  3.73epoch(s)/s, Training loss(es)=[23.95622]][A
+Network training:   1%|          | 1/100 [00:00<00:26,  3.73epoch(s)/s, Training loss(es)=[23.74472]][A
+Network training:   1%|          | 1/100 [00:00<00:26,  3.73epoch(s)/s, Training loss(es)=[23.48896]][A
+Network training:  20%|██        | 20/100 [00:00<00:01, 67.77epoch(s)/s, Training loss(es)=[23.48896]][A
+Network training:  20%|██        | 20/100 [00:00<00:01, 67.77epoch(s)/s, Training loss(es)=[23.19676]][A
+Network training:  20%|██        | 20/100 [00:00<00:01, 67.77epoch(s)/s, Training loss(es)=[22.86076]][A
+Network training:  20%|██        | 20/100 [00:00<00:01, 67.77epoch(s)/s, Training loss(es)=[22.47379]][A
+Network training:  20%|██        | 20/100 [00:00<00:01, 67.77epoch(s)/s, Training loss(es)=[22.05408]][A
+Network training:  20%|██        | 20/100 [00:00<00:01, 67.77epoch(s)/s, Training loss(es)=[21.60519]][A
+Network training:  20%|██        | 20/100 [00:00<00:01, 67.77epoch(s)/s, Training loss(es)=[21.10786]][A
+Network training:  20%|██        | 20/100 [00:00<00:01, 67.77epoch(s)/s, Training loss(es)=[20.54772]][A
+Network training:  20%|██        | 20/100 [00:00<00:01, 67.77epoch(s)/s, Training loss(es)=[19.96688]][A
+Network training:  20%|██        | 20/100 [00:00<00:01, 67.77epoch(s)/s, Training loss(es)=[19.36747]][A
+Network training:  20%|██        | 20/100 [00:00<00:01, 67.77epoch(s)/s, Training loss(es)=[18.78732]][A
+Network training:  20%|██        | 20/100 [00:00<00:01, 67.77epoch(s)/s, Training loss(es)=[18.15459]][A
+Network training:  20%|██        | 20/100 [00:00<00:01, 67.77epoch(s)/s, Training loss(es)=[17.49468]][A
+Network training:  20%|██        | 20/100 [00:00<00:01, 67.77epoch(s)/s, Training loss(es)=[16.86507]][A
+Network training:  20%|██        | 20/100 [00:00<00:01, 67.77epoch(s)/s, Training loss(es)=[16.2625]] [A
+Network training:  20%|██        | 20/100 [00:00<00:01, 67.77epoch(s)/s, Training loss(es)=[15.6899]][A
+Network training:  20%|██        | 20/100 [00:00<00:01, 67.77epoch(s)/s, Training loss(es)=[15.28569]][A
+Network training:  20%|██        | 20/100 [00:00<00:01, 67.77epoch(s)/s, Training loss(es)=[14.8863]] [A
+Network training:  20%|██        | 20/100 [00:00<00:01, 67.77epoch(s)/s, Training loss(es)=[14.45869]][A
+Network training:  20%|██        | 20/100 [00:00<00:01, 67.77epoch(s)/s, Training loss(es)=[14.0068]] [A
+Network training:  20%|██        | 20/100 [00:00<00:01, 67.77epoch(s)/s, Training loss(es)=[13.56421]][A
+Network training:  20%|██        | 20/100 [00:00<00:01, 67.77epoch(s)/s, Training loss(es)=[13.13163]][A
+Network training:  41%|████      | 41/100 [00:00<00:00, 113.09epoch(s)/s, Training loss(es)=[13.13163]][A
+Network training:  41%|████      | 41/100 [00:00<00:00, 113.09epoch(s)/s, Training loss(es)=[12.71497]][A
+Network training:  41%|████      | 41/100 [00:00<00:00, 113.09epoch(s)/s, Training loss(es)=[12.32549]][A
+Network training:  41%|████      | 41/100 [00:00<00:00, 113.09epoch(s)/s, Training loss(es)=[11.98811]][A
+Network training:  41%|████      | 41/100 [00:00<00:00, 113.09epoch(s)/s, Training loss(es)=[11.69389]][A
+Network training:  41%|████      | 41/100 [00:00<00:00, 113.09epoch(s)/s, Training loss(es)=[11.45486]][A
+Network training:  41%|████      | 41/100 [00:00<00:00, 113.09epoch(s)/s, Training loss(es)=[11.24651]][A
+Network training:  41%|████      | 41/100 [00:00<00:00, 113.09epoch(s)/s, Training loss(es)=[11.0552]] [A
+Network training:  41%|████      | 41/100 [00:00<00:00, 113.09epoch(s)/s, Training loss(es)=[10.87187]][A
+Network training:  41%|████      | 41/100 [00:00<00:00, 113.09epoch(s)/s, Training loss(es)=[10.69272]][A
+Network training:  41%|████      | 41/100 [00:00<00:00, 113.09epoch(s)/s, Training loss(es)=[10.51164]][A
+Network training:  41%|████      | 41/100 [00:00<00:00, 113.09epoch(s)/s, Training loss(es)=[10.35481]][A
+Network training:  41%|████      | 41/100 [00:00<00:00, 113.09epoch(s)/s, Training loss(es)=[10.21955]][A
+Network training:  41%|████      | 41/100 [00:00<00:00, 113.09epoch(s)/s, Training loss(es)=[10.27333]][A
+Network training:  41%|████      | 41/100 [00:00<00:00, 113.09epoch(s)/s, Training loss(es)=[10.29124]][A
+Network training:  41%|████      | 41/100 [00:00<00:00, 113.09epoch(s)/s, Training loss(es)=[10.21666]][A
+Network training:  41%|████      | 41/100 [00:00<00:00, 113.09epoch(s)/s, Training loss(es)=[10.08287]][A
+Network training:  41%|████      | 41/100 [00:00<00:00, 113.09epoch(s)/s, Training loss(es)=[9.9087]]  [A
+Network training:  41%|████      | 41/100 [00:00<00:00, 113.09epoch(s)/s, Training loss(es)=[9.71293]][A
+Network training:  41%|████      | 41/100 [00:00<00:00, 113.09epoch(s)/s, Training loss(es)=[9.49466]][A
+Network training:  41%|████      | 41/100 [00:00<00:00, 113.09epoch(s)/s, Training loss(es)=[9.27617]][A
+Network training:  41%|████      | 41/100 [00:00<00:00, 113.09epoch(s)/s, Training loss(es)=[9.06208]][A
+Network training:  41%|████      | 41/100 [00:00<00:00, 113.09epoch(s)/s, Training loss(es)=[8.84022]][A
+Network training:  63%|██████▎   | 63/100 [00:00<00:00, 144.97epoch(s)/s, Training loss(es)=[8.84022]][A
+Network training:  63%|██████▎   | 63/100 [00:00<00:00, 144.97epoch(s)/s, Training loss(es)=[8.61745]][A
+Network training:  63%|██████▎   | 63/100 [00:00<00:00, 144.97epoch(s)/s, Training loss(es)=[8.39943]][A
+Network training:  63%|██████▎   | 63/100 [00:00<00:00, 144.97epoch(s)/s, Training loss(es)=[8.17577]][A
+Network training:  63%|██████▎   | 63/100 [00:00<00:00, 144.97epoch(s)/s, Training loss(es)=[7.94258]][A
+Network training:  63%|██████▎   | 63/100 [00:00<00:00, 144.97epoch(s)/s, Training loss(es)=[7.71206]][A
+Network training:  63%|██████▎   | 63/100 [00:00<00:00, 144.97epoch(s)/s, Training loss(es)=[7.47367]][A
+Network training:  63%|██████▎   | 63/100 [00:00<00:00, 144.97epoch(s)/s, Training loss(es)=[7.22331]][A
+Network training:  63%|██████▎   | 63/100 [00:00<00:00, 144.97epoch(s)/s, Training loss(es)=[6.95751]][A
+Network training:  63%|██████▎   | 63/100 [00:00<00:00, 144.97epoch(s)/s, Training loss(es)=[6.69631]][A
+Network training:  63%|██████▎   | 63/100 [00:00<00:00, 144.97epoch(s)/s, Training loss(es)=[6.43451]][A
+Network training:  63%|██████▎   | 63/100 [00:00<00:00, 144.97epoch(s)/s, Training loss(es)=[6.28642]][A
+Network training:  63%|██████▎   | 63/100 [00:00<00:00, 144.97epoch(s)/s, Training loss(es)=[6.37207]][A
+Network training:  63%|██████▎   | 63/100 [00:00<00:00, 144.97epoch(s)/s, Training loss(es)=[6.39941]][A
+Network training:  63%|██████▎   | 63/100 [00:00<00:00, 144.97epoch(s)/s, Training loss(es)=[6.27017]][A
+Network training:  63%|██████▎   | 63/100 [00:00<00:00, 144.97epoch(s)/s, Training loss(es)=[6.05714]][A
+Network training:  63%|██████▎   | 63/100 [00:00<00:00, 144.97epoch(s)/s, Training loss(es)=[5.81547]][A
+Network training:  63%|██████▎   | 63/100 [00:00<00:00, 144.97epoch(s)/s, Training loss(es)=[5.54813]][A
+Network training:  63%|██████▎   | 63/100 [00:00<00:00, 144.97epoch(s)/s, Training loss(es)=[5.28038]][A
+Network training:  63%|██████▎   | 63/100 [00:00<00:00, 144.97epoch(s)/s, Training loss(es)=[5.033]]  [A
+Network training:  63%|██████▎   | 63/100 [00:00<00:00, 144.97epoch(s)/s, Training loss(es)=[4.80434]][A
+Network training:  63%|██████▎   | 63/100 [00:00<00:00, 144.97epoch(s)/s, Training loss(es)=[4.59121]][A
+Network training:  63%|██████▎   | 63/100 [00:00<00:00, 144.97epoch(s)/s, Training loss(es)=[4.38968]][A
+Network training:  63%|██████▎   | 63/100 [00:00<00:00, 144.97epoch(s)/s, Training loss(es)=[4.19207]][A
+Network training:  86%|████████▌ | 86/100 [00:00<00:00, 168.92epoch(s)/s, Training loss(es)=[4.19207]][A
+Network training:  86%|████████▌ | 86/100 [00:00<00:00, 168.92epoch(s)/s, Training loss(es)=[4.01395]][A
+Network training:  86%|████████▌ | 86/100 [00:00<00:00, 168.92epoch(s)/s, Training loss(es)=[3.84372]][A
+Network training:  86%|████████▌ | 86/100 [00:00<00:00, 168.92epoch(s)/s, Training loss(es)=[3.68372]][A
+Network training:  86%|████████▌ | 86/100 [00:00<00:00, 168.92epoch(s)/s, Training loss(es)=[3.53493]][A
+Network training:  86%|████████▌ | 86/100 [00:00<00:00, 168.92epoch(s)/s, Training loss(es)=[3.4033]] [A
+Network training:  86%|████████▌ | 86/100 [00:00<00:00, 168.92epoch(s)/s, Training loss(es)=[3.27356]][A
+Network training:  86%|████████▌ | 86/100 [00:00<00:00, 168.92epoch(s)/s, Training loss(es)=[3.15624]][A
+Network training:  86%|████████▌ | 86/100 [00:00<00:00, 168.92epoch(s)/s, Training loss(es)=[3.04775]][A
+Network training:  86%|████████▌ | 86/100 [00:00<00:00, 168.92epoch(s)/s, Training loss(es)=[2.93543]][A
+Network training:  86%|████████▌ | 86/100 [00:00<00:00, 168.92epoch(s)/s, Training loss(es)=[2.83061]][A
+Network training:  86%|████████▌ | 86/100 [00:00<00:00, 168.92epoch(s)/s, Training loss(es)=[2.74051]][A
+Network training:  86%|████████▌ | 86/100 [00:00<00:00, 168.92epoch(s)/s, Training loss(es)=[2.67429]][A
+Network training:  86%|████████▌ | 86/100 [00:00<00:00, 168.92epoch(s)/s, Training loss(es)=[2.6149]] [A
+Network training:  86%|████████▌ | 86/100 [00:00<00:00, 168.92epoch(s)/s, Training loss(es)=[2.55214]][ANetwork training: 100%|██████████| 100/100 [00:00<00:00, 133.64epoch(s)/s, Training loss(es)=[2.55214]]
+(46, 46)
+(46, 46)
+(46, 46)
+(46, 46)
+(46, 46)
+(46, 46)
+(46, 46)
+(46, 46)
+(46, 46)
+(46, 46)
+(46, 46)
+(46, 46)
+(46, 46)
+(46, 46)
+(46, 46)
+(46, 46)
+(46, 46)
+NUM_SAMPLES  128
+KSD VAL tensor(5034594.)
+QF LOSS  tensor(0.0026, grad_fn=<DivBackward0>)
+QF LOSS  tensor(0.0036, grad_fn=<DivBackward0>)
+QF LOSS  tensor(0.0060, grad_fn=<DivBackward0>)
+QF LOSS  tensor(0.0042, grad_fn=<DivBackward0>)
+QF LOSS  tensor(0.0050, grad_fn=<DivBackward0>)
+QF LOSS  tensor(0.0027, grad_fn=<DivBackward0>)
+QF LOSS  tensor(0.0034, grad_fn=<DivBackward0>)
+QF LOSS  tensor(0.0043, grad_fn=<DivBackward0>)
+QF LOSS  tensor(0.0025, grad_fn=<DivBackward0>)
+QF LOSS  tensor(0.0028, grad_fn=<DivBackward0>)
+QF LOSS  tensor(0.0028, grad_fn=<DivBackward0>)
+QF LOSS  tensor(0.0011, grad_fn=<DivBackward0>)
+QF LOSS  tensor(0.0022, grad_fn=<DivBackward0>)
+QF LOSS  tensor(0.0021, grad_fn=<DivBackward0>)
+QF LOSS  tensor(0.0013, grad_fn=<DivBackward0>)
+QF LOSS  tensor(0.0010, grad_fn=<DivBackward0>)
+QF LOSS  tensor(0.0011, grad_fn=<DivBackward0>)
+QF LOSS  tensor(0.0013, grad_fn=<DivBackward0>)
+QF LOSS  tensor(0.0010, grad_fn=<DivBackward0>)
+QF LOSS  tensor(0.0012, grad_fn=<DivBackward0>)
+QF LOSS  tensor(0.0011, grad_fn=<DivBackward0>)
+QF LOSS  tensor(0.0011, grad_fn=<DivBackward0>)
+QF LOSS  tensor(0.0010, grad_fn=<DivBackward0>)
+QF LOSS  tensor(0.0013, grad_fn=<DivBackward0>)
+QF LOSS  tensor(0.0010, grad_fn=<DivBackward0>)
+QF LOSS  tensor(0.0011, grad_fn=<DivBackward0>)
+QF LOSS  tensor(0.0010, grad_fn=<DivBackward0>)
+QF LOSS  tensor(0.0022, grad_fn=<DivBackward0>)
+QF LOSS  tensor(0.0014, grad_fn=<DivBackward0>)
+QF LOSS  tensor(0.0013, grad_fn=<DivBackward0>)
+QF LOSS  tensor(0.0015, grad_fn=<DivBackward0>)
+QF LOSS  tensor(0.0015, grad_fn=<DivBackward0>)
+QF LOSS  tensor(0.0025, grad_fn=<DivBackward0>)
+QF LOSS  tensor(0.0011, grad_fn=<DivBackward0>)
+QF LOSS  tensor(0.0014, grad_fn=<DivBackward0>)
+QF LOSS  tensor(0.0011, grad_fn=<DivBackward0>)
+QF LOSS  tensor(0.0010, grad_fn=<DivBackward0>)
+QF LOSS  tensor(0.0009, grad_fn=<DivBackward0>)
+QF LOSS  tensor(0.0010, grad_fn=<DivBackward0>)
+QF LOSS  tensor(0.0014, grad_fn=<DivBackward0>)
+QF LOSS  tensor(0.0008, grad_fn=<DivBackward0>)
+QF LOSS  tensor(0.0013, grad_fn=<DivBackward0>)
+QF LOSS  tensor(0.0009, grad_fn=<DivBackward0>)
+QF LOSS  tensor(0.0013, grad_fn=<DivBackward0>)
+QF LOSS  tensor(0.0011, grad_fn=<DivBackward0>)
+QF LOSS  tensor(0.0012, grad_fn=<DivBackward0>)
+QF LOSS  tensor(0.0015, grad_fn=<DivBackward0>)
+QF LOSS  tensor(0.0010, grad_fn=<DivBackward0>)
+QF LOSS  tensor(0.0008, grad_fn=<DivBackward0>)
+QF LOSS  tensor(0.0012, grad_fn=<DivBackward0>)
+QF LOSS  tensor(0.0010, grad_fn=<DivBackward0>)
+QF LOSS  tensor(0.0010, grad_fn=<DivBackward0>)
+QF LOSS  tensor(0.0009, grad_fn=<DivBackward0>)
+QF LOSS  tensor(0.0010, grad_fn=<DivBackward0>)
+QF LOSS  tensor(0.0012, grad_fn=<DivBackward0>)
+QF LOSS  tensor(0.0009, grad_fn=<DivBackward0>)
+QF LOSS  tensor(0.0011, grad_fn=<DivBackward0>)
+QF LOSS  tensor(0.0011, grad_fn=<DivBackward0>)
+QF LOSS  tensor(0.0012, grad_fn=<DivBackward0>)
+QF LOSS  tensor(0.0010, grad_fn=<DivBackward0>)
+QF LOSS  tensor(0.0007, grad_fn=<DivBackward0>)
+QF LOSS  tensor(0.0010, grad_fn=<DivBackward0>)
+QF LOSS  tensor(0.0009, grad_fn=<DivBackward0>)
+QF LOSS  tensor(0.0009, grad_fn=<DivBackward0>)
+QF LOSS  tensor(0.0007, grad_fn=<DivBackward0>)
+QF LOSS  tensor(0.0008, grad_fn=<DivBackward0>)
+QF LOSS  tensor(0.0008, grad_fn=<DivBackward0>)
+QF LOSS  tensor(0.0010, grad_fn=<DivBackward0>)
+QF LOSS  tensor(0.0010, grad_fn=<DivBackward0>)
+QF LOSS  tensor(0.0009, grad_fn=<DivBackward0>)
+QF LOSS  tensor(0.0008, grad_fn=<DivBackward0>)
+QF LOSS  tensor(0.0011, grad_fn=<DivBackward0>)
+QF LOSS  tensor(0.0010, grad_fn=<DivBackward0>)
+QF LOSS  tensor(0.0011, grad_fn=<DivBackward0>)
+QF LOSS  tensor(0.0012, grad_fn=<DivBackward0>)
+QF LOSS  tensor(0.0007, grad_fn=<DivBackward0>)
+QF LOSS  tensor(0.0009, grad_fn=<DivBackward0>)
+QF LOSS  tensor(0.0009, grad_fn=<DivBackward0>)
+QF LOSS  tensor(0.0009, grad_fn=<DivBackward0>)
+QF LOSS  tensor(0.0009, grad_fn=<DivBackward0>)
+QF LOSS  tensor(0.0007, grad_fn=<DivBackward0>)
+QF LOSS  tensor(0.0012, grad_fn=<DivBackward0>)
+QF LOSS  tensor(0.0009, grad_fn=<DivBackward0>)
+QF LOSS  tensor(0.0010, grad_fn=<DivBackward0>)
+QF LOSS  tensor(0.0010, grad_fn=<DivBackward0>)
+QF LOSS  tensor(0.0009, grad_fn=<DivBackward0>)
+QF LOSS  tensor(0.0010, grad_fn=<DivBackward0>)
+QF LOSS  tensor(0.0008, grad_fn=<DivBackward0>)
+QF LOSS  tensor(0.0008, grad_fn=<DivBackward0>)
+QF LOSS  tensor(0.0011, grad_fn=<DivBackward0>)
+QF LOSS  tensor(0.0010, grad_fn=<DivBackward0>)
+QF LOSS  tensor(0.0009, grad_fn=<DivBackward0>)
+QF LOSS  tensor(0.0012, grad_fn=<DivBackward0>)
+QF LOSS  tensor(0.0008, grad_fn=<DivBackward0>)
+QF LOSS  tensor(0.0008, grad_fn=<DivBackward0>)
+QF LOSS  tensor(0.0008, grad_fn=<DivBackward0>)
+QF LOSS  tensor(0.0007, grad_fn=<DivBackward0>)
+QF LOSS  tensor(0.0008, grad_fn=<DivBackward0>)
+QF LOSS  tensor(0.0009, grad_fn=<DivBackward0>)
+QF LOSS  tensor(0.0009, grad_fn=<DivBackward0>)
+QF LOSS  tensor(0.0007, grad_fn=<DivBackward0>)
+QF LOSS  tensor(0.0012, grad_fn=<DivBackward0>)
+QF LOSS  tensor(0.0009, grad_fn=<DivBackward0>)
+QF LOSS  tensor(0.0009, grad_fn=<DivBackward0>)
+QF LOSS  tensor(0.0008, grad_fn=<DivBackward0>)
+QF LOSS  tensor(0.0008, grad_fn=<DivBackward0>)
+QF LOSS  tensor(0.0007, grad_fn=<DivBackward0>)
+QF LOSS  tensor(0.0008, grad_fn=<DivBackward0>)
+QF LOSS  tensor(0.0007, grad_fn=<DivBackward0>)
+QF LOSS  tensor(0.0007, grad_fn=<DivBackward0>)
+QF LOSS  tensor(0.0008, grad_fn=<DivBackward0>)
+QF LOSS  tensor(0.0008, grad_fn=<DivBackward0>)
+QF LOSS  tensor(0.0008, grad_fn=<DivBackward0>)
+QF LOSS  tensor(0.0009, grad_fn=<DivBackward0>)
+QF LOSS  tensor(0.0008, grad_fn=<DivBackward0>)
+QF LOSS  tensor(0.0007, grad_fn=<DivBackward0>)
+QF LOSS  tensor(0.0010, grad_fn=<DivBackward0>)
+QF LOSS  tensor(0.0008, grad_fn=<DivBackward0>)
+QF LOSS  tensor(0.0009, grad_fn=<DivBackward0>)
+QF LOSS  tensor(0.0006, grad_fn=<DivBackward0>)
+QF LOSS  tensor(0.0008, grad_fn=<DivBackward0>)
+QF LOSS  tensor(0.0007, grad_fn=<DivBackward0>)
+QF LOSS  tensor(0.0009, grad_fn=<DivBackward0>)
+QF LOSS  tensor(0.0007, grad_fn=<DivBackward0>)
+QF LOSS  tensor(0.0007, grad_fn=<DivBackward0>)
+QF LOSS  tensor(0.0010, grad_fn=<DivBackward0>)
+QF LOSS  tensor(0.0007, grad_fn=<DivBackward0>)
+QF LOSS  tensor(0.0006, grad_fn=<DivBackward0>)
+QF LOSS  tensor(0.0007, grad_fn=<DivBackward0>)
+QF LOSS  tensor(0.0007, grad_fn=<DivBackward0>)
+QF LOSS  tensor(0.0008, grad_fn=<DivBackward0>)
+QF LOSS  tensor(0.0007, grad_fn=<DivBackward0>)
+QF LOSS  tensor(0.0006, grad_fn=<DivBackward0>)
+QF LOSS  tensor(0.0008, grad_fn=<DivBackward0>)
+QF LOSS  tensor(0.0008, grad_fn=<DivBackward0>)
+QF LOSS  tensor(0.0007, grad_fn=<DivBackward0>)
+QF LOSS  tensor(0.0007, grad_fn=<DivBackward0>)
+QF LOSS  tensor(0.0005, grad_fn=<DivBackward0>)
+QF LOSS  tensor(0.0007, grad_fn=<DivBackward0>)
+QF LOSS  tensor(0.0008, grad_fn=<DivBackward0>)
+QF LOSS  tensor(0.0008, grad_fn=<DivBackward0>)
+QF LOSS  tensor(0.0008, grad_fn=<DivBackward0>)
+QF LOSS  tensor(0.0011, grad_fn=<DivBackward0>)
+QF LOSS  tensor(0.0008, grad_fn=<DivBackward0>)
+---------- icl started at: 6144 -----------
+Traceback (most recent call last):
+  File "/scratch.global/radke149/dicl-ksrl/bin/dicl-sac", line 8, in <module>
+    sys.exit(main())
+  File "/scratch.global/radke149/gpt2mla/ksrl_dicl/src/dicl/rl/sac_continuous_action_dicl.py", line 887, in main
+    mean, mode, lb, ub = DICL.predict_single_step(X=time_series)
+  File "/scratch.global/radke149/gpt2mla/ksrl_dicl/src/dicl/dicl.py", line 212, in predict_single_step
+    self.iclearner.icl(verbose=0, stochastic=True)
+  File "/scratch.global/radke149/gpt2mla/ksrl_dicl/src/dicl/icl/iclearner.py", line 212, in icl
+    PDF_list, _, kv_cache = calculate_multiPDF_llama3(
+  File "/scratch.global/radke149/gpt2mla/ksrl_dicl/src/dicl/utils/icl.py", line 593, in calculate_multiPDF_llama3
+    batch["input_ids"].cuda(),
+  File "/scratch.global/radke149/dicl-ksrl/lib/python3.9/site-packages/torch/cuda/__init__.py", line 314, in _lazy_init
+    torch._C._cuda_init()
+RuntimeError: Found no NVIDIA driver on your system. Please check that you have an NVIDIA GPU and installed a driver from http://www.nvidia.com/Download/index.aspx
+  6%|▌         | 6000/100000 [00:06<01:49, 861.42it/s] 

@@ -1,6 +1,6 @@
 Metadata-Version: 2.4
 Name: KSRL_DICL
-Version: 0.1.0
+Version: 0.1.dev9+gab92f8a.d20250514
 Summary: Zero-shot Model-based Reinforcement Learning using Large Language Models.
 Author-email: Abdelhakim Benechehab <abdelhakim.benechehab@gmail.com>, Youssef Attia El Hili <youssef.attiaeh@gmail.com>, Ambroise Odonnat <ambroiseodonnattechnologie@gmail.com>, Oussama Zekri <oussama.zekri@ens-paris-saclay.fr>, Albert Thomas <albertthomas88@gmail.com>, Giuseppe Paolo <giuseppe.g.paolo@gmail.com>, Maurizio Filippone <maurizio.filippone@kaust.edu.sa>, Ievgen Redko <ievgen.redko@huawei.com>, Balázs Kégl <balazs.kegl@gmail.com>
 Maintainer-email: Abdelhakim Benechehab <abdelhakim.benechehab@gmail.com>
@@ -37,128 +37,34 @@ Requires-Dist: stable-baselines3==2.0.0; extra == "rl"
 Requires-Dist: tyro==0.5.10; extra == "rl"
 Dynamic: license-file
 
-<div align="center">
-<h1>DICL: Disentangled In-Context Learning for Multivariate Time-Series Forecasting 📊</h1>
+#TODO:
 
-[![paper](https://img.shields.io/static/v1?label=arXiv&message=2402.03885&color=B31B1B&logo=arXiv)](https://arxiv.org/abs/2410.11711)
-[![Hugging Face](https://img.shields.io/badge/Hugging%20Face-FFD21E?logo=huggingface&logoColor=000)](https://huggingface.co/papers/2410.11711)
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue)](https://opensource.org/license/MIT)
-[![Python: 3.9](https://img.shields.io/badge/Python-3.9-blue)]()
+1) MODIFY thin_data_new() function inside src/dicl/rl/NB_dx_tf_new.py so that it
 
-</div>
+    1.1 does not delete the data after the container pruning has finished
 
-## 🔥 **Exciting News!** 🔥
-Our paper has been **accepted at ICLR 2025**! 🎉📄🎓  
-👉 **[Zero-shot Model-based Reinforcement Learning using Large Language Models](https://openreview.net/forum?id=uZFXpPrwSh)**  
+2) MAKE thin_data_new() method of src/dicl/rl/NB_dx_tf_new.py return the indices of the best 300 datapoints WHEN THINNING NEW DATA ON SYNTHETIC DATA (real==False flag within the function)
+this can be done either by  
+    2.1 sampling 300 best points after initializing the container, without even going to the loop or inside ksdp/pruning_container.py  
+    2.2 go inside ksdp and make it return 300 best points instead of n (currently 5) worst points as it is now  
 
----
 
-This repository contains the **official implementation** of the paper:  
+BE SURE TO ADJUST OTHER PARTS OF THE CODE THAT RELY ON THE CODE YOU MODIFIED, IF ANY
 
-> 📖 Abdelhakim Benechehab, Youssef Attia El Hili, Ambroise Odonnat, Oussama Zekri, Albert Thomas, Giuseppe Paolo, Maurizio Filippone, Ievgen Redko, Balázs Kégl.  
-> **[Zero-shot Model-based Reinforcement Learning using Large Language Models](https://openreview.net/forum?id=uZFXpPrwSh)**  
+3) take best 300 datapoints in order to be fed to SAC (critic) training proces:
+ either by using rb_llm and indices returned from thin_data_new(),   
+OR   
+by returning the ACTUAL DATA from thin_data_new() (I suppose that one will be harder because you will have to compute next_observation by adding self.train_y_s, the difference, and extract actions from self.train_x_s)
 
-### 📌 Abstract  
-The emerging zero-shot capabilities of Large Language Models (LLMs) have led to their applications in areas extending well beyond natural language processing tasks. In reinforcement learning, while LLMs have been extensively used in text-based environments, their integration with continuous state spaces remains understudied. In this paper, we investigate how pre-trained LLMs can be leveraged to predict in context the dynamics of continuous Markov decision processes. We identify handling multivariate data and incorporating the control signal as key challenges that limit the potential of LLMs' deployment in this setup and propose **Disentangled In-Context Learning (DICL)** to address them. We present proof-of-concept applications in two reinforcement learning settings: model-based policy evaluation and data-augmented off-policy reinforcement learning, supported by theoretical analysis of the proposed methods. Our experiments further demonstrate that our approach produces well-calibrated uncertainty estimates.
 
-![main figure](figures/main_figure_for_repo.PNG)  
+4) BONUS: try implementing Bayesian thinning on ReplayBuffer so that we feed best 300 transitions to the LLM.  
+4.1 randomized windowing to have consecutive stuff   
+4.2 other ideas   
 
----
-
-## ⚙️ Installation  
-
-🔹 **Create a conda environment**:  
-```bash
-conda create -n dicl python=3.9
-```  
-🔹 **Activate the environment**:  
-```bash
-conda activate dicl
-```  
-🔹 **Install the package**:  
-```bash
-pip install .
-```  
-🔹 **Install RL dependencies** (for **DICL-SAC**):  
-```bash
-pip install .[rl]
-```  
-🔹 **For developers** (includes pre-commit hooks 🛠️):  
-```bash
-pip install -e .[dev]
-pre-commit install
-```  
-
----
-
-## 🚀 Getting Started  
-
-### **DICL**  
-- Try our **multivariate time series forecasting** method using the [getting started notebook](getting_started.ipynb).  
-
-### **DICL-SAC**  
-- Install the RL dependencies and run **DICL-SAC** with:  
-```bash
-dicl-sac --seed $RANDOM --env-id HalfCheetah --total-timesteps 1000000 --exp_name "test_5p_vicl" --batch_size 128 --llm_batch_size 7 --llm_learning_frequency 256 --context_length 500 --interact_every 1000 --learning_starts 5000 --llm_learning_starts 10000 --llm_model 'meta-llama/Llama-3.2-1B' --method 'vicl'
-```  
-**Arguments**:  
-![dicl_sac_args](figures/dicl_sac_args.PNG)  
-
-### **SAC (Baseline)**  
-- Run **Soft Actor-Critic (SAC)** as a baseline:  
-```bash
-sac --seed $RANDOM --env-id "HalfCheetah" --total-timesteps 1000000 --exp_name "test_baseline" --interact_every 1000 --batch_size 128 --learning_starts 5000
-```  
-**Arguments**:  
-![sac_args](figures/sac_args.PNG)  
-
----
-
-## 📂 Directory Structure  
-
-Overview of the repository’s contents (inside `/src/dicl/`):  
-
-- `dicl.py` → The main class `DICL` that orchestrates the framework
-- `icl/` → Core LLM usage classes such as `ICLTrainer` 
-- `rl/` → Scripts for **SAC baseline** & **DICL-SAC** 
-- `data/` → Sample dataset from **D4RL** for testing
-- `utils/` → Helper functions
-
----
-
-## 📜 License  
-
-🔓 This project is licensed under the **MIT License**. See the [LICENSE](LICENSE) file for details.  
-
----
-
-## 🌍 Open-source Participation  
-
-We **welcome contributions**!
-Feel free to **submit issues, PRs, or feedback**—your ideas help improve DICL. 
-
----
-
-## 🙏 Credits  
-
-A big **thank you** to:  
-
-- **[CleanRL](https://github.com/vwxyzjn/cleanrl)** for their **SAC implementations** 
-- The authors of the paper **[LLMs learn governing principles of dynamical systems, revealing an in-context neural scaling law](https://github.com/AntonioLiu97/llmICL)** for access to their codebase
-
----
-
-## 📚 Citing DICL  
-
-If you use DICL in your work, please cite **our ICLR 2025 paper**:  
-
-```bibtex
-@inproceedings{
-benechehab2025zeroshot,
-title={Zero-shot Model-based Reinforcement Learning using Large Language Models},
-author={Abdelhakim Benechehab and Youssef Attia El Hili and Ambroise Odonnat and Oussama Zekri and Albert Thomas and Giuseppe Paolo and Maurizio Filippone and Ievgen Redko and Bal{\'a}zs K{\'e}gl},
-booktitle={The Thirteenth International Conference on Learning Representations},
-year={2025},
-url={https://openreview.net/forum?id=uZFXpPrwSh}
-}
-```
+5) MEGABONUS : any ideas to speed things up while retaining quality?  
+things to consider  
+5.5 Using the main LLM also to extract log probs of next states  
+5.6 Using another separate LLM to extract log probs of next states    
+5.7 Pretrain Bayesian net for some decent amount of epochs and then instead of training it just load the weights     
+5.8 Reduce the number of samples retained within Bayesian net (e.g. sort of updating not every steps, or at certain windows, or something other)        
+5.9 Use critic's weights to compute log probs    
