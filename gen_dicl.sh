@@ -1,5 +1,5 @@
 #!/bin/bash -l
-#SBATCH --time=1:30:00
+#SBATCH --time=12:00:00
 #SBATCH --ntasks=4
 #SBATCH --cpus-per-task=4
 #SBATCH --mem=50g
@@ -21,7 +21,6 @@ conda install -c conda-forge tensorflow=2.17 -y
 
 # --- Set XLA_FLAGS to help TensorFlow find libdevice ---
 export XLA_FLAGS="--xla_gpu_cuda_data_dir=$CONDA_PREFIX"
-echo "XLA_FLAGS set to: $XLA_FLAGS"
 # ---
 
 echo "Upgrading pip..."
@@ -31,14 +30,13 @@ echo "Installing KSRL_DICL package and its other dependencies from requirements.
 
 pip install .[rl]
 
-
 echo "Starting dicl-sac experiment..."
 dicl-sac --seed 42 \
     --env-id HalfCheetah-v4 \
     --total-timesteps 100000 \
-    --exp_name "temp_remove" \
+    --exp_name "exp_1" \
     --batch_size 128 \
-    --llm_batch_size 7 \
+    --llm_batch_size 128 \
     --llm_learning_frequency 256 \
     --context_length 300 \
     --interact_every 1000 \

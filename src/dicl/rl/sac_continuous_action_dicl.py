@@ -347,14 +347,12 @@ class TruncReplayBuffer(ReplayBuffer):
         # Do not sample the element with index `self.pos` as the transitions is invalid
         # (we use only one array to store `obs` and `next_obs`)
         if self.full:
-            batch_inds = (np.arange(1, self.buffer_size, sibatch_size) + self.pos) % self.buffer_size
+            batch_inds = (np.arange(1, self.buffer_size, self.batch_size) + self.pos) % self.buffer_size
         else:
             batch_inds = np.arange(0, self.pos, size=batch_size)
         self.batch_inds = batch_inds
         return self._get_samples(batch_inds, env=env)
-
-        
-        
+    
     def add(
         self,
         obs: np.ndarray,
@@ -399,42 +397,7 @@ class TruncReplayBuffer(ReplayBuffer):
         self.pos += 1
         if self.pos == self.buffer_size:
             self.full = True
-            self.pos = 0
-    
-    
-    def delete(self, pos: List[int], shift: Optional[bool] = None,) -> None:
-        to_keep = []
-        for i in range(self.pos):
-            if i not in pos:
-                to_keep.append(i)
-        for i in range(len(to_keep)):
-            self.observations[i] = self.observations[to_keep[i]]
-
-            self.next_observations[i] = self.next_observations[to_keep[i]]
-            self.actions[i] = self.actions[to_keep[i]]
-            self.rewards[i] = self.rewards[to_keep[i]]
-            self.dones[i] = self.dones[to_keep[i]]
-            if self.handle_timeout_termination:
-                self.timeouts[i] = self.timeouts[to_keep[i]]
-            if self.handle_auxiliary_actions:
-                self.auxiliary_actions[i] = self.auxiliary_actions[to_keep[i]]
-
-        for i in range(len(to_keep), self.pos, 1):
-            self.observations[i] = np.zeros_like(self.observations[i]) 
-
-            self.next_observations[i] =  np.zeros_like(self.next_observations[i])
-            self.actions[i] =  np.zeros_like(self.actions[i])
-            self.rewards[i] =  np.zeros_like(self.rewards[i])
-            self.dones[i] =  np.zeros_like(self.dones[i])
-            if self.handle_timeout_termination:
-                self.timeouts[i] =  np.zeros_like(self.timeouts[i])
-            if self.handle_auxiliary_actions:
-                self.auxiliary_actions[i] =  np.zeros_like(self.auxiliary_actions[i])
-        self.pos -= len(pos)
-
-
-
-                
+            self.pos = 0                
 
 
 
@@ -561,22 +524,25 @@ def main():
     erstens = True
     args = tyro.cli(Args)
     tf.disable_v2_behavior()
-    run_name = f"{args.env_id}__{args.exp_name}__{args.seed}__{int(time.time())}"
 
-    writer = SummaryWriter(f"{args.path}/runs/{run_name}")
+    llm_alpha = args.llm_batch_size / args.batch_size
+    run_name = f"{args.exp_name}__{args.method}_alpha_{int(100*llm_alpha)}"
+    log_dir = f"{args.path}/runs/{args.env_id}/{run_name}"
+    writer = SummaryWriter(log_dir)
     writer.add_text(
         "hyperparameters",
         "|param|value|\n|-|-|\n%s"
         % ("\n".join([f"|{key}|{value}|" for key, value in vars(args).items()])),
     )
     csv_logger = CSVLogger(
-        f"{args.path}/runs/{run_name}/logs.csv",
+        f"{log_dir}/logs.csv",
         fieldnames=["global_step", "return"],
         write_frequency=1,
     )
     # save args
-    with open(f"{args.path}/runs/{run_name}/args.json", "w") as fout:
+    with open(f"{log_dir}/args.json", "w") as fout:
         json.dump(args.__dict__, fout, indent=4)
+
 
     # TRY NOT TO MODIFY: seeding
     random.seed(args.seed)
@@ -681,7 +647,7 @@ def main():
         if global_step % args.save_policy_checkpoints == 0:
             torch.save(
                 actor.state_dict(),
-                f"{args.path}/runs/{run_name}/actor_checkpoint_{global_step}.pth",
+                f"{log_dir}/actor_checkpoint_{global_step}.pth",
             )
 
         # ------- This is interaction with environment -------
@@ -805,7 +771,7 @@ def main():
                             started_sampling = True
                             step_started_sampling = copy.copy((global_step + local_step))
                             with open(
-                                f"{args.path}/runs/{run_name}/icl_started.txt", "w"
+                                f"{log_dir}/icl_started.txt", "w"
                             ) as f:
                                 f.write(f"icl started at: {(global_step + local_step)}")
 
@@ -899,7 +865,6 @@ def main():
                                 llm_terminations = np.zeros((1,))
 
                                 # 2. Append transformed transition to augmented rb
-                                #pdb.set_trace()
                                 rb_llm.add(
                                     llm_obs,
                                     llm_next_obs,
@@ -976,8 +941,8 @@ def main():
                                 ksd_val_s, ids_rem = my_dx.thin_data_synthetic_new('ksd', args.llm_batch_size)
                                 ksd_fakes.append(ksd_val_s)
                   
-                                writer.add_scalar("charts/KSD_SYNTH", ksd_val.mean().item(), global_step)
-                                print("KSD VAL SYNTH", ksd_val)
+                                writer.add_scalar("charts/KSD_SYNTH", ksd_val_s.mean().item(), global_step)
+                                print("KSD VAL SYNTH", ksd_val_s, flush=True)
                                 
                                 obs_l = data_llm.observations[ids_rem]
                                 next_obs_l = data_llm.next_observations[ids_rem]
@@ -1009,11 +974,6 @@ def main():
                             )
                             
 
-                            #Laplace approximation 
-                            def logprob_sum(stat):
-                                mean, std = stat
-                                return (torch.distributions.Normal(mean, std)).logprob(mean).sum()
-
                             qf1_next_target = qf1_target(
                                 data.next_observations, next_state_actions
                             )
@@ -1036,7 +996,10 @@ def main():
                         qf2_loss = F.mse_loss(qf2_a_values, next_q_value)
                     
                         if p < 1.0:
-                            qf_loss = p * (qf1_loss + qf2_loss)/((ksd_val_s+1)/(ksd_val*100)) if ksd_val != 0 else p * (qf1_loss + qf2_loss)/(ksd_val_s+1)
+                            if ksd_val != 0:
+                                 qf_loss = p * (qf1_loss + qf2_loss)/((ksd_val_s+1)/(ksd_val*100))
+                            else:
+                                qf_loss = p * (qf1_loss + qf2_loss)/(ksd_val_s+1)
                         else:
                             qf_loss = p * (qf1_loss + qf2_loss)
                     
