@@ -189,7 +189,7 @@ class PruningContainer:
 
         pruned_samples = []
         
-        if self.points.shape[0]<=min_samples:
+        if self.points.shape[0] <= min_samples:
             return pruned_samples
 
         init_ksd_squared = self.get_ksd_squared()
@@ -221,8 +221,6 @@ class PruningContainer:
 
 
     def retain_to_cutoff(self, cutoff, min_samples=300):
-
-
         pruned_samples = []
 
         if self.points.shape[0]<=min_samples:

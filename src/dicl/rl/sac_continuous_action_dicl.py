@@ -218,6 +218,13 @@ class Args:
     auxiliary_actions: bool = True
     """whether to use auxiliary actions"""
 
+    use_ksd_weighting: bool = True
+
+    use_ksd_pruning: bool = True
+
+    bays_learning_frequency = 200
+
+
 
 class TruncReplayBuffer(ReplayBuffer):
     def __init__(
@@ -297,7 +304,7 @@ class TruncReplayBuffer(ReplayBuffer):
                 total_memory_usage /= 1e9
                 mem_available /= 1e9
                 warnings.warn(
-                    "This system does not have apparently enough memory to store the "
+                    "This system does not have enough memory to store the "
                     "complete replay buffer {total_memory_usage:.2f}GB > "
                     f"{mem_available:.2f}GB"
                 )
@@ -324,10 +331,6 @@ class TruncReplayBuffer(ReplayBuffer):
             batch_inds = np.random.randint(0, self.pos, size=batch_size)
         self.batch_inds = batch_inds
         return self._get_samples(batch_inds, env=env)
-
-    def sample_indices(batch_size):
-        self.sample()
-        return self.batch_inds
     
     
     def sample_consec(self, batch_size: int, env: Optional[VecNormalize] = None) -> ReplayBufferSamples:
@@ -521,7 +524,6 @@ class Actor(nn.Module):
 
 
 def main():
-    erstens = True
     args = tyro.cli(Args)
     tf.disable_v2_behavior()
 
@@ -879,7 +881,7 @@ def main():
                     coeff_batches_to_train_on = [1.0]
                     batches_to_train_on = [copy.copy(data)]
                     #can do some decaying schedule instead
-                    if (global_step + local_step)%200 == 0:                
+                    if (global_step + local_step)%args.bays_learning_frequency == 0 and (args.use_ksd_weighting or args.use_ksd_pruning):                
                         for i in range(batches_to_train_on[0].observations.shape[0]):
                             #pdb.set_trace()
                             if args.env_id == "Pendulum-v1":
@@ -887,17 +889,16 @@ def main():
                             else:
                                 xu = torch.cat((torch.tensor(tf.get_static_value(batches_to_train_on[0].observations[i].squeeze().cpu())).double(), torch.tensor(tf.get_static_value(batches_to_train_on[0].actions[i].squeeze().cpu())).double()))
                             shappe = my_dx.add_data(new_x=xu, new_y=torch.tensor(tf.get_static_value(batches_to_train_on[0].next_observations[i].cpu())).squeeze() - torch.tensor(tf.get_static_value(batches_to_train_on[0].observations[i].cpu())).squeeze(), new_r = torch.tensor(tf.get_static_value(batches_to_train_on[0].rewards[i].cpu())).squeeze(0))
-                        #if (global_step + local_step)%200 == 0:
+
                         my_dx.sample() 
-                        #my_dx.generate_latent_z()
-                        #ksd_val = my_dx.get_ksd('ksd')
+
                         
                         my_dx.train(100)
                     
                         post_var = my_dx.update_bays_reg()
                         ksd_val = my_dx.thin_data_new('ksd')
                         ksd_trues.append(ksd_val)
-                        print("KSD VAL", ksd_val)
+                        #print("KSD VAL", ksd_val)
                         writer.add_scalar("charts/KSD_VALID", ksd_val.mean().item(), global_step)
                         #coeff_batches_to_train_on = [1.0]
                         
@@ -908,27 +909,20 @@ def main():
                         > args.llm_learning_starts
                         - args.learning_starts + step_started_sampling
                     ) and started_sampling:
-                        #pdb.set_trace()
                         #INCREASE THE LLM BATCH SIZE
                         
-                        if args.train_only_from_llm or (global_step + local_step)%200 == 0:
+
+                        if args.use_ksd_pruning:
                             data_llm = rb_llm.sample(args.llm_batch_size*7)
+                        else:
+                            data_llm = rb_llm.sample(args.llm_batch_size)
+                                
                         # concatenate data and data_llm
                         if args.train_only_from_llm:
-                            # data = data_llm
                             batches_to_train_on = [copy.copy(data_llm)]
                             coeff_batches_to_train_on = [1.0]
                         else:
-                            #pdb.set_trace()
-                            
-                            #batches_to_train_on.append(copy.copy(data_llm))
-                            
-                            """
-                            coeff_batches_to_train_on.append(
-                                float(args.llm_batch_size / args.batch_size)
-                            )
-                            """
-                            if (global_step + local_step)%200 == 0:
+                            if args.use_ksd_pruning:                        
                                 for i in range(data_llm.observations.shape[0]):
                                     #pdb.set_trace()
                                     if args.env_id == "Pendulum-v1":
@@ -937,12 +931,12 @@ def main():
                                         xu = torch.cat((torch.tensor(tf.get_static_value(data_llm.observations[i].squeeze().cpu())).double(), torch.tensor(tf.get_static_value(data_llm.actions[i].squeeze().cpu())).double()))
 
                                     shappe = my_dx.add_synth_data(new_x=xu, new_y=torch.tensor(tf.get_static_value(data_llm.next_observations[i].cpu())).squeeze() - torch.tensor(tf.get_static_value(data_llm.observations[i].cpu())).squeeze(), new_r = torch.tensor(tf.get_static_value(data_llm.rewards[i].cpu())).squeeze(0))
- 
+
                                 ksd_val_s, ids_rem = my_dx.thin_data_synthetic_new('ksd', args.llm_batch_size)
                                 ksd_fakes.append(ksd_val_s)
-                  
+                    
                                 writer.add_scalar("charts/KSD_SYNTH", ksd_val_s.mean().item(), global_step)
-                                print("KSD VAL SYNTH", ksd_val_s, flush=True)
+                                #print("KSD VAL SYNTH", ksd_val_s, flush=True)
                                 
                                 obs_l = data_llm.observations[ids_rem]
                                 next_obs_l = data_llm.next_observations[ids_rem]
@@ -960,12 +954,16 @@ def main():
                                     float(len(ids_rem) / args.batch_size)
                                 )
                                 batches_to_train_on.append(copy.copy(data_x))
-
+                            else:
+                                batches_to_train_on.append(copy.copy(data_llm))
+                                coeff_batches_to_train_on.append(
+                                    float(args.llm_batch_size / args.batch_size)
+                                )
 
                     # --------------------------------------------
                     iterator = 0
                 
-                    for data, p in zip(batches_to_train_on, coeff_batches_to_train_on):
+                    for data, per_batchsize in zip(batches_to_train_on, coeff_batches_to_train_on):
 
                         iterator += 1
                         with torch.no_grad():
@@ -995,33 +993,26 @@ def main():
                         qf1_loss = F.mse_loss(qf1_a_values, next_q_value)
                         qf2_loss = F.mse_loss(qf2_a_values, next_q_value)
                     
-                        if p < 1.0:
+                        if args.use_ksd_weighting and per_batchsize < 1.0:
                             if ksd_val != 0:
-                                 qf_loss = p * (qf1_loss + qf2_loss)/((ksd_val_s+1)/(ksd_val*100))
+                                 qf_loss = per_batchsize * (qf1_loss + qf2_loss)/((ksd_val_s+1)/(ksd_val*100))
                             else:
-                                qf_loss = p * (qf1_loss + qf2_loss)/(ksd_val_s+1)
+                                qf_loss = per_batchsize * (qf1_loss + qf2_loss)/(ksd_val_s+1)
                         else:
-                            qf_loss = p * (qf1_loss + qf2_loss)
-                    
-
-
+                            qf_loss = per_batchsize * (qf1_loss + qf2_loss)
 
                         # optimize the model
                         q_optimizer.zero_grad()
                         qf_loss.backward()
                         q_optimizer.step()
 
-                        if (
-                            global_step + local_step
-                        ) % args.policy_frequency == 0:  # TD 3 Delayed update support
-                            for _ in range(
-                                args.policy_frequency
-                            ):  # compensate for the delay by doing 'actor_update_interval'
+                        if (global_step + local_step) % args.policy_frequency == 0:  # TD 3 Delayed update support
+                            for _ in range(args.policy_frequency):  # compensate for the delay by doing 'actor_update_interval'
                                 pi, log_pi, _ = actor.get_action(data.observations)
                                 qf1_pi = qf1(data.observations, pi)
                                 qf2_pi = qf2(data.observations, pi)
                                 min_qf_pi = torch.min(qf1_pi, qf2_pi)
-                                actor_loss = p * ((alpha * log_pi) - min_qf_pi).mean()
+                                actor_loss = per_batchsize * ((alpha * log_pi) - min_qf_pi).mean()
 
                                 actor_optimizer.zero_grad()
                                 actor_loss.backward()
@@ -1031,7 +1022,7 @@ def main():
                                     with torch.no_grad():
                                         _, log_pi, _ = actor.get_action(data.observations)
                                     alpha_loss = (
-                                        p
+                                        per_batchsize
                                         * (
                                             -log_alpha.exp() * (log_pi + target_entropy)
                                         ).mean()
@@ -1066,6 +1057,12 @@ def main():
                         )
                         writer.add_scalar("losses/qf1_loss", qf1_loss.item(), global_step)
                         writer.add_scalar("losses/qf2_loss", qf2_loss.item(), global_step)
+                       
+                        if ksd_val != 0:
+                            writer.add_scalar("losses/weighted_alpha", ((ksd_val_s+1)/(ksd_val*100)).item(), global_step)
+                        else:
+                            writer.add_scalar("losses/weighted_alpha", (ksd_val_s+1).item(), global_step)
+
                         writer.add_scalar(
                             "losses/qf_loss", qf_loss.item() / 2.0, global_step
                         )
