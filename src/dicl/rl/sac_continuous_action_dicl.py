@@ -881,7 +881,7 @@ def main():
                     coeff_batches_to_train_on = [1.0]
                     batches_to_train_on = [copy.copy(data)]
                     #can do some decaying schedule instead
-                    if (global_step + local_step)%args.bays_learning_frequency == 0 and (args.use_ksd_weighting or args.use_ksd_pruning):                
+                    if (global_step + local_step)%args.bays_learning_frequency == 0:   #and (args.use_ksd_weighting or args.use_ksd_pruning)             
                         for i in range(batches_to_train_on[0].observations.shape[0]):
                             #pdb.set_trace()
                             if args.env_id == "Pendulum-v1":
@@ -1058,10 +1058,11 @@ def main():
                         writer.add_scalar("losses/qf1_loss", qf1_loss.item(), global_step)
                         writer.add_scalar("losses/qf2_loss", qf2_loss.item(), global_step)
                        
-                        if ksd_val != 0:
-                            writer.add_scalar("losses/weighted_alpha", ((ksd_val_s+1)/(ksd_val*100)).item(), global_step)
-                        else:
-                            writer.add_scalar("losses/weighted_alpha", (ksd_val_s+1).item(), global_step)
+                        if args.use_ksd_weighting:
+                            if ksd_val != 0:
+                                writer.add_scalar("losses/weighted_alpha", ((ksd_val_s+1)/(ksd_val*100)).item(), global_step)
+                            else:
+                                writer.add_scalar("losses/weighted_alpha", (ksd_val_s+1).item(), global_step)
 
                         writer.add_scalar(
                             "losses/qf_loss", qf_loss.item() / 2.0, global_step
