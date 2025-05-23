@@ -1,5 +1,5 @@
 #!/bin/bash -l
-#SBATCH --time=12:00:00
+#SBATCH --time=6:00:00
 #SBATCH --ntasks=4
 #SBATCH --cpus-per-task=4
 #SBATCH --mem=50g
@@ -31,18 +31,19 @@ echo "Installing KSRL_DICL package and its other dependencies from requirements.
 pip install .[rl]
 
 echo "Starting dicl-sac experiment..."
-dicl-sac --seed 42 \
+dicl-sac --seed 73 \
     --env-id HalfCheetah-v4 \
     --total-timesteps 100000 \
-    --exp_name "exp_1" \
+    --exp_name "explore_weirdness" \
     --batch_size 128 \
-    --llm_batch_size 128 \
+    --llm_batch_size 8 \
     --llm_learning_frequency 256 \
     --context_length 300 \
     --interact_every 1000 \
     --learning_starts 5000 \
     --llm_learning_starts 10000 \
     --llm_model 'meta-llama/Llama-3.2-1B' \
-    --method 'dicl_s_pca'
-
+    --method 'dicl_s_pca' \
+    --no-use_ksd_pruning \
+    --no-use_ksd_weighting
 echo "Job finished."
