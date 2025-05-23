@@ -200,7 +200,6 @@ class neural_bays_dx_tf(object):
                 covs = self.cov_w[i][np.newaxis, :, :]
                 multivariates = np.random.multivariate_normal(mus, covs[0])
                 beta_s.append(multivariates)
-
         except np.linalg.LinAlgError as e:
             # If the covariance isn’t positive definite, fall back to isotropic noise
             multivariates = np.random.multivariate_normal(np.zeros((d,)), np.eye(d))
@@ -460,7 +459,6 @@ class neural_bays_dx_tf(object):
             gradients = grad
 
             check_ksd = ksd.get_KSD(torch.Tensor(smpl), torch.Tensor(grad), kernel_type = 'rbf', h_method = 'dim')
-            print('the ksd is' + str(check_ksd))
 
             #write : Update pruning container
             kernel_type = 'rbf'
@@ -533,11 +531,11 @@ class neural_bays_dx_tf(object):
 
             #get the ids of the pruned samples
             ids_pruned = [samples.tolist().index(i) for i in pruned_new]
-            print ('ids pruned ', ids_pruned)
+
 
             #total samples
             ids_total = list(np.arange(0,self.train_x.shape[0]))
-            print ('ids total ', len(ids_total))
+
 
             #get the ids to keep
             ids = [x for x in ids_total if x not in ids_pruned]
@@ -623,7 +621,6 @@ class neural_bays_dx_tf(object):
             gradients = grad
 
             check_ksd = ksd.get_KSD(torch.Tensor(smpl), torch.Tensor(grad), kernel_type = 'rbf', h_method = 'dim')
-            print('the ksd is' + str(check_ksd))
 
             #write : Update pruning container
             kernel_type = 'rbf'
