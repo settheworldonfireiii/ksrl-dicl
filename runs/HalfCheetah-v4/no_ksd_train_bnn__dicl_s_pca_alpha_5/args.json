@@ -1,5 +1,5 @@
 {
-    "exp_name": "no_pruning",
+    "exp_name": "no_ksd_train_bnn",
     "seed": 42,
     "torch_deterministic": true,
     "cuda": true,
@@ -29,7 +29,7 @@
     "up_shift": 1.5,
     "llm_learning_starts": 10000,
     "llm_learning_frequency": 256,
-    "llm_batch_size": 8,
+    "llm_batch_size": 7,
     "train_only_from_llm": false,
     "min_episodes_to_start_icl": 5,
     "burnin_llm": 0,
@@ -37,5 +37,5 @@
     "llm_percentage_to_keep": 100,
     "auxiliary_actions": true,
     "use_ksd_weighting": false,
-    "use_ksd_pruning": true
+    "use_ksd_pruning": false
 }

@@ -922,34 +922,36 @@ def main():
                             batches_to_train_on = [copy.copy(data_llm)]
                             coeff_batches_to_train_on = [1.0]
                         else:
-                            if args.use_ksd_pruning:                        
-                                for i in range(data_llm.observations.shape[0]):
-                                    #pdb.set_trace()
-                                    if args.env_id == "Pendulum-v1":
-                                        xu = torch.cat((torch.tensor(tf.get_static_value(data_llm.observations[i].squeeze().cpu())).double(), torch.tensor(tf.get_static_value(data_llm.actions[i].cpu())).double()))
-                                    else:
-                                        xu = torch.cat((torch.tensor(tf.get_static_value(data_llm.observations[i].squeeze().cpu())).double(), torch.tensor(tf.get_static_value(data_llm.actions[i].squeeze().cpu())).double()))
+                               
+                            for i in range(data_llm.observations.shape[0]):
+                                #pdb.set_trace()
+                                if args.env_id == "Pendulum-v1":
+                                    xu = torch.cat((torch.tensor(tf.get_static_value(data_llm.observations[i].squeeze().cpu())).double(), torch.tensor(tf.get_static_value(data_llm.actions[i].cpu())).double()))
+                                else:
+                                    xu = torch.cat((torch.tensor(tf.get_static_value(data_llm.observations[i].squeeze().cpu())).double(), torch.tensor(tf.get_static_value(data_llm.actions[i].squeeze().cpu())).double()))
 
-                                    shappe = my_dx.add_synth_data(new_x=xu, new_y=torch.tensor(tf.get_static_value(data_llm.next_observations[i].cpu())).squeeze() - torch.tensor(tf.get_static_value(data_llm.observations[i].cpu())).squeeze(), new_r = torch.tensor(tf.get_static_value(data_llm.rewards[i].cpu())).squeeze(0))
+                                shappe = my_dx.add_synth_data(new_x=xu, new_y=torch.tensor(tf.get_static_value(data_llm.next_observations[i].cpu())).squeeze() - torch.tensor(tf.get_static_value(data_llm.observations[i].cpu())).squeeze(), new_r = torch.tensor(tf.get_static_value(data_llm.rewards[i].cpu())).squeeze(0))
 
-                                ksd_val_s, ids_rem = my_dx.thin_data_synthetic_new('ksd', args.llm_batch_size)
-                                ksd_fakes.append(ksd_val_s)
-                    
-                                writer.add_scalar("charts/KSD_SYNTH", ksd_val_s.mean().item(), global_step)
-                                #print("KSD VAL SYNTH", ksd_val_s, flush=True)
-                                
-                                obs_l = data_llm.observations[ids_rem]
-                                next_obs_l = data_llm.next_observations[ids_rem]
-                                actions_l = data_llm.actions[ids_rem]
-                                rewards_l  = data_llm.rewards[ids_rem]
-                                dones_l = data_llm.dones[ids_rem]
-                                data_x = ReplayBufferSamples(
-                                    observations=obs_l,
-                                    next_observations=next_obs_l,
-                                    actions=actions_l,
-                                    rewards=rewards_l,
-                                    dones=dones_l
-                                    )
+                            ksd_val_s, ids_rem = my_dx.thin_data_synthetic_new('ksd', args.llm_batch_size)
+                            ksd_fakes.append(ksd_val_s)
+                
+                            writer.add_scalar("charts/KSD_SYNTH", ksd_val_s.mean().item(), global_step)
+                            #print("KSD VAL SYNTH", ksd_val_s, flush=True)
+                            
+                            obs_l = data_llm.observations[ids_rem]
+                            next_obs_l = data_llm.next_observations[ids_rem]
+                            actions_l = data_llm.actions[ids_rem]
+                            rewards_l  = data_llm.rewards[ids_rem]
+                            dones_l = data_llm.dones[ids_rem]
+                            data_x = ReplayBufferSamples(
+                                observations=obs_l,
+                                next_observations=next_obs_l,
+                                actions=actions_l,
+                                rewards=rewards_l,
+                                dones=dones_l
+                                )
+                            
+                            if args.use_ksd_pruning:   
                                 coeff_batches_to_train_on.append(
                                     float(len(ids_rem) / args.batch_size)
                                 )
@@ -993,13 +995,9 @@ def main():
                         qf1_loss = F.mse_loss(qf1_a_values, next_q_value)
                         qf2_loss = F.mse_loss(qf2_a_values, next_q_value)
                     
+                        qf_loss = per_batchsize * (qf1_loss + qf2_loss)
                         if args.use_ksd_weighting and per_batchsize < 1.0:
-                            if ksd_val != 0:
-                                 qf_loss = per_batchsize * (qf1_loss + qf2_loss)/((ksd_val_s+1)/(ksd_val*100))
-                            else:
-                                qf_loss = per_batchsize * (qf1_loss + qf2_loss)/(ksd_val_s+1)
-                        else:
-                            qf_loss = per_batchsize * (qf1_loss + qf2_loss)
+                            qf_loss = qf_loss/((ksd_val_s+1)/(ksd_val*100 + 1))
 
                         # optimize the model
                         q_optimizer.zero_grad()
@@ -1060,7 +1058,7 @@ def main():
                        
                         if args.use_ksd_weighting:
                             if ksd_val != 0:
-                                writer.add_scalar("losses/weighted_alpha", ((ksd_val_s+1)/(ksd_val*100)).item(), global_step)
+                                writer.add_scalar("losses/weighted_alpha", ((ksd_val_s+1)/(ksd_val*100 + 1)).item(), global_step)
                             else:
                                 writer.add_scalar("losses/weighted_alpha", (ksd_val_s+1).item(), global_step)
 
