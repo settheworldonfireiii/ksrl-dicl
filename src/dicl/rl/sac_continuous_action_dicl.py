@@ -59,7 +59,7 @@ from .ksdp import *
 from .ksdp import utils
 from .ksdp import ksd
 
-from .NB_dx_tf import neural_bays_dx_tf  
+from .NB_dx_tf import neural_bays_dx_tf
 
 
 try:
@@ -559,7 +559,6 @@ def main():
     # ----------- define n_observations and n_actions -----------
     n_observations = envs.single_observation_space.shape[0]
     action_shape = envs.single_action_space.shape[0]
-    #pdb.set_trace()
     dx_model = construct_shallow_model(obs_dim=n_observations, act_dim=action_shape, hidden_dim=200, num_networks=1, num_elites=1)
 
     my_dx = neural_bays_dx_tf(args, dx_model, "dx", n_observations, sigma_n2=1e-3**2,sigma2=1e1**2)
@@ -659,12 +658,12 @@ def main():
                 for idx, trunc in enumerate(truncations):
                     if trunc:
                         real_next_obs[idx] = infos["final_observation"][idx]
-                #pdb.set_trace()
+
                 rb.add(obs, real_next_obs, actions, rewards, terminations, infos)
                 if (
                         episode_step < args.burnin_llm
                     ) and args.add_init_burin_steps_to_llm:
-                        #pdb.set_trace()
+
                         rb_llm.add(
                             obs, real_next_obs, actions, rewards, terminations, infos
                         )
@@ -677,12 +676,12 @@ def main():
             
             if global_step > args.learning_starts:
                 local_step = 0
-                #pdb.set_trace()
+
                 for _ in range(args.interact_every):
                     # ------- sample from real replay buffer --------
                     #  vim /scratch.global/radke149/dicl/lib/python3.9/site-packages/stable_baselines3/common/buffers.py 
                     data = rb.sample(args.batch_size)
-                    #pdb.set_trace()
+
                     # ------- Data Augmentation using LLM -------
                     # 1. Generate transformed transition
                     # 1.1. Sample sub-trajectory of length 'context_length' from rb
@@ -813,11 +812,13 @@ def main():
                                     {},  # llm_infos,
                                 )
 
+
                     coeff_batches_to_train_on = [1.0]
                     batches_to_train_on = [copy.copy(data)]
                     #can do some decaying schedule instead
                     if (global_step + local_step)%args.bays_learning_frequency == 0 and (args.use_ksd_weighting or args.use_ksd_pruning):             
                         for i in range(batches_to_train_on[0].observations.shape[0]):
+
 
                             if args.env_id == "Pendulum-v1":
                                 xu = torch.cat((torch.tensor(tf.get_static_value(batches_to_train_on[0].observations[i].squeeze().cpu())).double(), torch.tensor(tf.get_static_value(batches_to_train_on[0].actions[i].cpu())).double()))
@@ -825,16 +826,18 @@ def main():
                                 xu = torch.cat((torch.tensor(tf.get_static_value(batches_to_train_on[0].observations[i].squeeze().cpu())).double(), torch.tensor(tf.get_static_value(batches_to_train_on[0].actions[i].squeeze().cpu())).double()))
                             shappe = my_dx.add_data(new_x=xu, new_y=torch.tensor(tf.get_static_value(batches_to_train_on[0].next_observations[i].cpu())).squeeze() - torch.tensor(tf.get_static_value(batches_to_train_on[0].observations[i].cpu())).squeeze(), new_r = torch.tensor(tf.get_static_value(batches_to_train_on[0].rewards[i].cpu())).squeeze(0))
 
-                        my_dx.sample() 
+                        #my_dx.sample() 
 
                         
-                        my_dx.train(100)
+                        #my_dx.train(100)
                     
-                        post_var = my_dx.update_bays_reg()
-                        ksd_val = my_dx.thin_data_new('ksd')
-                        ksd_trues.append(ksd_val)
+                        #post_var = my_dx.update_bays_reg()
+                        #ksd_val = my_dx.thin_data_new('ksd')
+                        #ksd_trues.append(ksd_val)
                         #print("KSD VAL", ksd_val)
                         writer.add_scalar("charts/KSD_VALID", ksd_val.mean().item(), global_step)
+                        #writer.add_scalar("charts/KSD_VALID", ksd_val.mean().item(), global_step)
+                        #coeff_batches_to_train_on = [1.0]
                         
                     # 3. Sample from rb and transformed_rb to train ActorCritic
                     
@@ -855,9 +858,9 @@ def main():
                         if args.train_only_from_llm:
                             batches_to_train_on = [copy.copy(data_llm)]
                             coeff_batches_to_train_on = [1.0]
-                        elif args.use_ksd_pruning:
+                        elif args.use_ksd_pruning:   
                             for i in range(data_llm.observations.shape[0]):
-                                #pdb.set_trace()
+
                                 if args.env_id == "Pendulum-v1":
                                     xu = torch.cat((torch.tensor(tf.get_static_value(data_llm.observations[i].squeeze().cpu())).double(), torch.tensor(tf.get_static_value(data_llm.actions[i].cpu())).double()))
                                 else:
@@ -893,7 +896,7 @@ def main():
                             coeff_batches_to_train_on.append(
                                 float(args.llm_batch_size / args.batch_size)
                             )
-
+                            
                     # --------------------------------------------
                     iterator = 0
                 
@@ -928,7 +931,7 @@ def main():
                         qf2_loss = F.mse_loss(qf2_a_values, next_q_value)
                     
                         qf_loss = per_batchsize * (qf1_loss + qf2_loss)
-                        if args.use_ksd_weighting and per_batchsize < 1.0:
+                        if args.use_ksd_weighting and per_batchsize < 1.0:#this does not really work well unless pruning is also on
                             qf_loss = qf_loss/((ksd_val_s+1)/(ksd_val*100 + 1))
 
                         # optimize the model

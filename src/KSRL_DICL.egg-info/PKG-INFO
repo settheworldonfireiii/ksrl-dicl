@@ -1,6 +1,6 @@
 Metadata-Version: 2.4
 Name: KSRL_DICL
-Version: 0.1.dev45+gc0abbaa.d20250526
+Version: 0.1.dev45+gc0abbaa.d20250523
 Summary: Zero-shot Model-based Reinforcement Learning using Large Language Models.
 Author-email: Abdelhakim Benechehab <abdelhakim.benechehab@gmail.com>, Youssef Attia El Hili <youssef.attiaeh@gmail.com>, Ambroise Odonnat <ambroiseodonnattechnologie@gmail.com>, Oussama Zekri <oussama.zekri@ens-paris-saclay.fr>, Albert Thomas <albertthomas88@gmail.com>, Giuseppe Paolo <giuseppe.g.paolo@gmail.com>, Maurizio Filippone <maurizio.filippone@kaust.edu.sa>, Ievgen Redko <ievgen.redko@huawei.com>, Balázs Kégl <balazs.kegl@gmail.com>
 Maintainer-email: Abdelhakim Benechehab <abdelhakim.benechehab@gmail.com>
