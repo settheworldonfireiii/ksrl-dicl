@@ -59,72 +59,7 @@ from .ksdp import *
 from .ksdp import utils
 from .ksdp import ksd
 
-from .NB_dx_tf import neural_bays_dx_tf
-
-
-
-
-def randperm_in_range(n, m):
-  """
-  Generates a tensor of n unique random integers in the range [0, m-1].
-
-  Args:
-    n: The number of random integers to generate.
-    m: The upper bound of the range (exclusive).
-
-  Returns:
-    A tensor of shape (n,) containing a random permutation of integers from 0 to m-1.
-  """
-  if n > m:
-    raise ValueError("n cannot be greater than m")
-
-  return torch.randint(m, (n,), generator=torch.Generator().manual_seed(torch.seed()))
-
-
-
-
-
-def merge_and_shuffle_samples(
-    data: ReplayBufferSamples,
-    data_llm: ReplayBufferSamples
-) -> ReplayBufferSamples:
-    """
-    Concatenate two ReplayBufferSamples and randomly shuffle in unison, all on torch tensors.
-    """
-    # 1) Concatenate each tensor field along dim=0:
-    obs            = torch.cat([data.observations,    data_llm.observations],    dim=0)  # :contentReference[oaicite:0]{index=0}
-    next_obs       = torch.cat([data.next_observations, data_llm.next_observations], dim=0)  # :contentReference[oaicite:1]{index=1}
-    actions        = torch.cat([data.actions,         data_llm.actions],         dim=0)  # :contentReference[oaicite:2]{index=2}
-    rewards        = torch.cat([data.rewards,        data_llm.rewards],        dim=0)  # :contentReference[oaicite:3]{index=3}
-    dones          = torch.cat([data.dones,          data_llm.dones],          dim=0)  # :contentReference[oaicite:4]{index=4}
-
-    # infos is a Python list of dicts; just extend it in CPU memory
-    #infos = data.infos + data_llm.infos  # :contentReference[oaicite:5]{index=5}
-
-    # 2) Build a random permutation on the same device as your tensors:
-    device = obs.device
-    maxim  = obs.shape[0]
-    total = data.observations.shape[0]
-    #perm   = torch.randperm(total, device=device)  # :contentReference[oaicite:6]{index=6}
-    perm = randperm_in_range(total, maxim)
-    # 3) Re‐index (shuffle) each tensor using that same permutation:
-    obs_s      = obs[perm]           # :contentReference[oaicite:7]{index=7}
-    next_obs_s = next_obs[perm]      # :contentReference[oaicite:8]{index=8}
-    acts_s     = actions[perm]       # :contentReference[oaicite:9]{index=9}
-    rews_s     = rewards[perm]       # :contentReference[oaicite:10]{index=10}
-    dones_s    = dones[perm]         # :contentReference[oaicite:11]{index=11}
-    #infos_s    = [infos[i] for i in perm.tolist()]  # :contentReference[oaicite:12]{index=12}
-
-    # 4) Wrap back into ReplayBufferSamples:
-    return ReplayBufferSamples(
-        observations=obs_s,
-        next_observations=next_obs_s,
-        actions=acts_s,
-        rewards=rews_s,
-        dones=dones_s
-        )
-
-    
+from .NB_dx_tf import neural_bays_dx_tf  
 
 
 try:
@@ -877,13 +812,13 @@ def main():
                                     llm_terminations,
                                     {},  # llm_infos,
                                 )
-                    #pdb.set_trace()
+
                     coeff_batches_to_train_on = [1.0]
                     batches_to_train_on = [copy.copy(data)]
                     #can do some decaying schedule instead
-                    if (global_step + local_step)%args.bays_learning_frequency == 0:   #and (args.use_ksd_weighting or args.use_ksd_pruning)             
+                    if (global_step + local_step)%args.bays_learning_frequency == 0 and (args.use_ksd_weighting or args.use_ksd_pruning):             
                         for i in range(batches_to_train_on[0].observations.shape[0]):
-                            #pdb.set_trace()
+
                             if args.env_id == "Pendulum-v1":
                                 xu = torch.cat((torch.tensor(tf.get_static_value(batches_to_train_on[0].observations[i].squeeze().cpu())).double(), torch.tensor(tf.get_static_value(batches_to_train_on[0].actions[i].cpu())).double()))
                             else:
@@ -900,7 +835,6 @@ def main():
                         ksd_trues.append(ksd_val)
                         #print("KSD VAL", ksd_val)
                         writer.add_scalar("charts/KSD_VALID", ksd_val.mean().item(), global_step)
-                        #coeff_batches_to_train_on = [1.0]
                         
                     # 3. Sample from rb and transformed_rb to train ActorCritic
                     
@@ -921,8 +855,7 @@ def main():
                         if args.train_only_from_llm:
                             batches_to_train_on = [copy.copy(data_llm)]
                             coeff_batches_to_train_on = [1.0]
-                        else:
-                               
+                        elif args.use_ksd_pruning:
                             for i in range(data_llm.observations.shape[0]):
                                 #pdb.set_trace()
                                 if args.env_id == "Pendulum-v1":
@@ -951,16 +884,15 @@ def main():
                                 dones=dones_l
                                 )
                             
-                            if args.use_ksd_pruning:   
-                                coeff_batches_to_train_on.append(
-                                    float(len(ids_rem) / args.batch_size)
-                                )
-                                batches_to_train_on.append(copy.copy(data_x))
-                            else:
-                                batches_to_train_on.append(copy.copy(data_llm))
-                                coeff_batches_to_train_on.append(
-                                    float(args.llm_batch_size / args.batch_size)
-                                )
+                            batches_to_train_on.append(copy.copy(data_x))
+                            coeff_batches_to_train_on.append(
+                                float(len(ids_rem) / args.batch_size)
+                            )
+                        else:
+                            batches_to_train_on.append(copy.copy(data_llm))
+                            coeff_batches_to_train_on.append(
+                                float(args.llm_batch_size / args.batch_size)
+                            )
 
                     # --------------------------------------------
                     iterator = 0
