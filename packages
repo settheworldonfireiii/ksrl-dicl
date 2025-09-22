@@ -1,0 +1,5 @@
+conda create --prefix /scratch.global/radke149/dicl-ksrl python==3.11
+pip3 install torch torchvision --index-url https://download.pytorch.org/whl/cu126
+pip install stable-baselines3[extra]
+git clone https://github.com/abenechehab/dicl
+pip install -e .[dev]

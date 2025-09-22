@@ -53,7 +53,8 @@ class TensorStandardScaler:
         self.sigma.load(sigma)
         self.fitted = True
         self.cache()
-
+    
+    #@tf.function
     def transform(self, data):
         """Transforms the input matrix data using the parameters of this scaler.
 

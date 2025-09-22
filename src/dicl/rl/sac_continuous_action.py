@@ -355,6 +355,9 @@ def main():
                         )
 
                 if (global_step + local_step) % 100 == 0:
+                    if "episode" in info:
+                        pdb.set_trace()
+                        pass
                     writer.add_scalar(
                         "losses/qf1_values",
                         qf1_a_values.mean().item(),
@@ -365,6 +368,9 @@ def main():
                         qf2_a_values.mean().item(),
                         global_step + local_step,
                     )
+                    writer.add_scalar(
+                            "charts/episodic_return", info["episode"]["r"], global_step
+                        )
                     writer.add_scalar(
                         "losses/qf1_loss", qf1_loss.item(), global_step + local_step
                     )

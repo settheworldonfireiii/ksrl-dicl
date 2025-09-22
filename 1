@@ -1,0 +1,39 @@
+# === Core numerics ===
+jax
+optax
+equinox
+numpy==2.0.2            # TF 2.18 requires numpy < 2.1.0
+scipy==1.15.2
+tqdm==4.62.3
+
+# === TensorFlow (NumPy 2.0.x compatible) ===
+tensorflow
+tensorboard
+# TF 2.18 brings in keras>=3.5 automatically; no separate pin needed.
+
+
+# === PyTorch stack ===
+torch==2.1.2
+torchvision==0.16.2
+
+# === Hugging Face ecosystem ===
+transformers==4.38.0
+datasets==2.18.0
+huggingface-hub==0.19.4
+peft==0.5.0
+safetensors==0.4.1
+
+# === Model training/serving ===
+deepspeed==0.12.3
+vllm==0.3.3
+
+# === Utilities ===
+fire==0.5.0
+tyro
+stein_thinning 
+
+
+# === flash-attn MUST be installed AFTER torch ===
+# Install separately (choose correct CUDA toolchain):
+#   pip install --no-build-isolation "flash-attn==2.5.6"
+

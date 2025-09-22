@@ -192,10 +192,12 @@ class BNN:
                                                 shape=[self.num_nets, None, self.layers[-1].get_output_dim() // 2],
                                                 name="training_targets")
             train_loss = tf.compat.v1.reduce_sum(self._compile_losses(self.sy_train_in, self.sy_train_targ, inc_var_loss=True))
+            print("DECAYS ", self.decays)
+            print("PROBABLY PREDICTIONS ", self.sy_train_in)
             train_loss += tf.add_n(self.decays)
             train_loss += 0.01 * tf.compat.v1.reduce_sum(self.max_logvar) - 0.01 * tf.compat.v1.reduce_sum(self.min_logvar)
             self.mse_loss = self._compile_losses(self.sy_train_in, self.sy_train_targ, inc_var_loss=False)
-
+            self.pred_summary = self._compile_outputs(self.sy_train_in, ret_log_var=False)[0] 
             self.train_op = self.optimizer.minimize(train_loss, var_list=self.optvars)
 
         # Initialize all variables
@@ -344,7 +346,7 @@ class BNN:
             epoch_range = range(epochs)
         else:
             epoch_range = trange(epochs, unit="epoch(s)", desc="Network training")
-        for _ in epoch_range:
+        for epoch in epoch_range:
             for batch_num in range(int(np.ceil(idxs.shape[-1] / batch_size))):
                 batch_idxs = idxs[:, batch_num * batch_size:(batch_num + 1) * batch_size]
                 self.sess.run(
@@ -353,33 +355,25 @@ class BNN:
                 )
             idxs = shuffle_rows(idxs)
             if not hide_progress:
-                if holdout_ratio < 1e-12:
-                    epoch_range.set_postfix({
-                        "Training loss(es)": self.sess.run(
-                            self.mse_loss,
-                            feed_dict={
-                                self.sy_train_in: inputs[idxs[:, :max_logging]],
-                                self.sy_train_targ: targets[idxs[:, :max_logging]]
-                            }
-                        )
-                    })
-                else:
-                    epoch_range.set_postfix({
-                        "Training loss(es)": self.sess.run(
-                            self.mse_loss,
-                            feed_dict={
-                                self.sy_train_in: inputs[idxs[:, :max_logging]],
-                                self.sy_train_targ: targets[idxs[:, :max_logging]]
-                            }
-                        ),
-                        "Holdout loss(es)": self.sess.run(
-                            self.mse_loss,
-                            feed_dict={
-                                self.sy_train_in: holdout_inputs,
-                                self.sy_train_targ: holdout_targets
-                            }
-                        )
-                    })
+                lo, hi = self.sess.run([self.min_logvar, self.max_logvar])
+                postfix = {
+                            "Training loss(es)": self.sess.run(
+                        self.mse_loss,
+                        feed_dict={self.sy_train_in: inputs[idxs[:, :max_logging]],
+                                   self.sy_train_targ: targets[idxs[:, :max_logging]]}
+                    )[0],
+                    "min_logvar": float(lo.ravel()[0]),
+                    "max_logvar": float(hi.ravel()[0]),
+                }
+                if holdout_ratio > 1e-12:
+                    postfix["Holdout loss(es)"] = self.sess.run(
+                        self.mse_loss,
+                        feed_dict={self.sy_train_in: holdout_inputs,
+                                   self.sy_train_targ: holdout_targets}
+                    )[0]
+                epoch_range.set_postfix(postfix)   # <-- ONLY this line
+
+
 
     def predict(self, inputs, factored=False, layer = False, *args, **kwargs):
         """Returns the distribution predicted by the model for each input vector in inputs.
@@ -564,6 +558,7 @@ class BNN:
         inv_var = tf.exp(-log_var)
 
         if inc_var_loss:
+            print("MEAN ", mean)
             mse_losses = tf.compat.v1.reduce_mean(tf.compat.v1.reduce_mean(tf.square(mean - targets) * inv_var, axis=-1), axis=-1)
             var_losses = tf.compat.v1.reduce_mean(tf.compat.v1.reduce_mean(log_var, axis=-1), axis=-1)
             total_losses = mse_losses + var_losses

@@ -28,7 +28,8 @@ warnings.filterwarnings("ignore")
 
 def _to_np(a):
     # unwrap tensors, scalars, masked arrays, whatever—give me a bare ndarray
-    return np.array(a, copy=False)
+    return np.array(a)
+    #return np.array(a, copy=False)
 
 
     
@@ -73,9 +74,9 @@ class neural_bays_dx_tf(object):
                 tx = _to_np(self.train_x)
                 nx = _to_np(new_x)
                 self.train_x = np.vstack((tx, nx))
-                print(tx.shape)
-                print(nx.shape)
-                print(self.train_x.shape)
+                #print(tx.shape)
+                #print(nx.shape)
+                #print(self.train_x.shape)
                 ty = _to_np(self.train_y)
                 ny = _to_np(new_y)
                 tr = _to_np(self.rew)
@@ -101,9 +102,9 @@ class neural_bays_dx_tf(object):
                 tx = _to_np(self.train_x_s)
                 nx = _to_np(new_x)
                 self.train_x_s = np.vstack((tx, nx))
-                print(tx.shape)
-                print(nx.shape)
-                print(self.train_x_s.shape)
+                #print(tx.shape)
+                #print(nx.shape)
+                #print(self.train_x_s.shape)
                 ty = _to_np(self.train_y_s)
                 ny = _to_np(new_y)
                 tr = _to_np(self.rew_s)
@@ -160,7 +161,9 @@ class neural_bays_dx_tf(object):
             self.latent_z = new_z
         else:
             # print ('the shape is' + str(self.train_x.shape))   ## 200 * 4
-            new_z = self.get_representation(self.train_x_s)
+            # MODIFIED FOR REAL DATA
+            # IN PREVIOS (PROBABLY WRONG ) VERSION WAS FOR SYNTHETIC DATA
+            new_z = self.get_representation(self.train_x)
             self.latent_z_s = new_z
 
 
@@ -169,6 +172,8 @@ class neural_bays_dx_tf(object):
         if self.model_type == "SAC":
             self.model.learn(total_timesteps=10000)
         else:
+            #print("TRAIN ", self.train_x.shape[0])
+            #print("TRAIN TARGETs ", self.train_y.shape[0])
             self.model.train(self.train_x,self.train_y,epochs=epochs)
         self.generate_latent_z()
 
@@ -531,7 +536,7 @@ class neural_bays_dx_tf(object):
                     #get next
                     if i == 100:
                         pdb.set_trace()
-                    print("IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII ", i,"  IIIIIIIIIIIIIIIIIIIIIIIIIIIIIII")
+                    #print("IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII ", i,"  IIIIIIIIIIIIIIIIIIIIIIIIIIIIIII")
                     next_sample, next_gradient = neural_bays_dx_tf.select_samples(pruning_container=pruning_container,
                                                                 new_samples=batch_samples,
                                                                 new_gradients=batch_gradients,
@@ -562,7 +567,7 @@ class neural_bays_dx_tf(object):
 
                 #get the ids of the pruned samples
                 ids_pruned = [samples.tolist().index(i) for i in pruned_new]
-                print ('ids pruned ', ids_pruned)
+                #print ('ids pruned ', ids_pruned)
 
                 #total samples
                 ids_total = list(np.arange(0,self.train_x.shape[0]))
@@ -716,11 +721,11 @@ class neural_bays_dx_tf(object):
 
                 #get the ids of the pruned samples
                 ids_pruned = [samples.tolist().index(i) for i in pruned_new]
-                print ('ids pruned ', ids_pruned)
+                #print ('ids pruned ', ids_pruned)
 
                 #total samples
                 ids_total = list(np.arange(0,self.train_x_s.shape[0]))
-                print ('ids total ', len(ids_total))
+                #print ('ids total ', len(ids_total))
 
                 #get the ids to keep
                 ids = [x for x in ids_total if x not in ids_pruned]
@@ -735,7 +740,7 @@ class neural_bays_dx_tf(object):
             self.train_x_s = self.train_x_s[ids]
             self.train_y_s = self.train_y_s[ids]
             self.rew_s = self.rew_s[ids]
-            print ('after' + str(self.train_x_s.shape), str(self.train_y_s.shape))
+            #print ('after' + str(self.train_x_s.shape), str(self.train_y_s.shape))
 
 
             
@@ -1026,11 +1031,11 @@ class neural_bays_dx_tf(object):
 
             #get the ids of the pruned samples
             ids_pruned = [samples.tolist().index(i) for i in pruned_new]
-            print ('ids pruned ', ids_pruned)
+            # print ('ids pruned ', ids_pruned)
 
             #total samples
             ids_total = list(np.arange(0,self.train_x.shape[0]))
-            print ('ids total ', len(ids_total))
+            #print ('ids total ', len(ids_total))
 
             #get the ids to keep
             ids = [x for x in ids_total if x not in ids_pruned]
@@ -1045,7 +1050,7 @@ class neural_bays_dx_tf(object):
         self.train_x = self.train_x[ids]
         self.train_y = self.train_y[ids]
         self.rew = self.rew[ids]
-        print ('after' + str(self.train_x.shape), str(self.train_y.shape))
+        #print ('after' + str(self.train_x.shape), str(self.train_y.shape))
 
         return check_ksd
 
