@@ -16,12 +16,13 @@ from scipy.stats import invgamma
 import pickle
 import warnings
 import math
+import pdb
 
 #ksd
 from .ksdp import *
 from .ksdp import utils
 from .ksdp import ksd
-
+from .ksdp import PruningContainer
 warnings.filterwarnings("ignore")
 
 
@@ -54,13 +55,22 @@ class neural_bays_dx_tf(object):
         self.sigma_n2 = sigma_n2  # noise variacne
         self.eye = np.eye(self.hidden_dim)
         self.mu_w = np.random.normal(loc=0, scale=.01, size=(output_shape, self.hidden_dim))
+        self.mu_w_s = np.random.normal(loc=0, scale=.01, size=(output_shape, self.hidden_dim))
         self.cov_w = np.array([self.sigma2 * np.eye(self.hidden_dim) for _ in range(output_shape)])
+        self.cov_w_s = np.array([self.sigma2 * np.eye(self.hidden_dim) for _ in range(output_shape)])
         self.train_x_s = None
         self.train_y_s = None
         self.rew_s = None
+        self.global_next_id   = 0
+        self.all_ids = []
+        self.curr_ids = []
 
     #primary main code where data is added
     def add_data(self, new_x, new_y, new_r, real = True):
+        B = new_x.shape[0]
+        self.curr_ids = list(range(self.all_ids, self.all_ids + B))
+        self.global_next_id += B
+        self.all_ids.extend(self.curr_ids)
         if real:
             if self.train_x is None:
                 self.train_x = new_x
@@ -161,9 +171,8 @@ class neural_bays_dx_tf(object):
             self.latent_z = new_z
         else:
             # print ('the shape is' + str(self.train_x.shape))   ## 200 * 4
-            # MODIFIED FOR REAL DATA
-            # IN PREVIOS (PROBABLY WRONG ) VERSION WAS FOR SYNTHETIC DATA
-            new_z = self.get_representation(self.train_x)
+        
+            new_z = self.get_representation(self.train_x_s)
             self.latent_z_s = new_z
 
 
@@ -256,79 +265,116 @@ class neural_bays_dx_tf(object):
 
 
 
-    def update_bays_reg(self):
+    def update_bays_reg(self, real = True):
 
-        for i in range(self.output_shape):
+        if real == True:
+            for i in range(self.output_shape):
             
-            # Update  posterior with formulas: \beta | z,y ~ N(mu_q, cov_q)
-            z = self.latent_z
-            if self.model_type == "SAC":
-                y = self.train_y[:, i] - self.model.actor.mu[0].bias[i].item()
-            else:
-                y = self.train_y[:, i] - self.model.layers[len(self.model.layers)-1].biases.eval(session =self.model.sess).squeeze()[i]
+                # Update  posterior with formulas: \beta | z,y ~ N(mu_q, cov_q)
+                z = self.latent_z
+                if self.model_type == "SAC":
+                    y = self.train_y[:, i] - self.model.actor.mu[0].bias[i].item()
+                else:
+                    y = self.train_y[:, i] - self.model.layers[len(self.model.layers)-1].biases.eval(session =self.model.sess).squeeze()[i]
+                s = np.dot(z.T, z)
+                print(s.shape)
+                # inv = np.linalg.inv((s/self.sigma_n + 1/self.sigma*self.eye))
+                A = s / self.sigma_n2 + 1 / self.sigma2 * self.eye
+                B = np.dot(z.T, y) / self.sigma_n2
+                reg_coeff = 0
+
+                
+
+                for _ in range(10):
+                    try:
+                        # Compute inv
+                        A = A + reg_coeff * self.eye
+                        inv = np.linalg.inv(A)
+                    except Exception as e:
+                        # in case computation failed
+                        print(e)
+                        reg_coeff += 10
+
+                    # Store new posterior distributions using inv
+                    else:
+                        self.mu_w[i] = inv.dot(B).squeeze()
+                        self.cov_w[i] = inv
+                        break
+            return self.cov_w
+        else:
+            for i in range(self.output_shape):
+
+                # Update  posterior with formulas: \beta | z,y ~ N(mu_q, cov_q)
+                n = len(self.latent_z_s)
+
+                z = np.concatenate([self.latent_z_s[:n//5],self.latent_z[n//5:]], axis  = 0)
+                if self.model_type == "SAC":
+                    y = np.concatenate([self.train_y_s[:n//5, i], self.train_y[n//5:, i]], axis = 0) - self.model.actor.mu[0].bias[i].item()
+                else:
+                    y = np.concatenate([self.train_y_s[:n//5, i], self.train_y[n//5:, i]], axis = 0) - self.model.layers[len(self.model.layers)-1].biases.eval(session =self.model.sess).squeeze()[i]
+                s = np.dot(z.T, z)
+                print(s.shape)
+                # inv = np.linalg.inv((s/self.sigma_n + 1/self.sigma*self.eye))
+                A = s / self.sigma_n2 + 1 / self.sigma2 * self.eye
+                B = np.dot(z.T, y) / self.sigma_n2
+                reg_coeff = 0
+
+
+
+                for _ in range(10):
+                    try:
+                        # Compute inv
+                        A = A + reg_coeff * self.eye
+                        inv = np.linalg.inv(A)
+                    except Exception as e:
+                        # in case computation failed
+                        print(e)
+                        reg_coeff += 10
+
+                    # Store new posterior distributions using inv
+                    else:
+                        self.mu_w[i] = inv.dot(B).squeeze()
+                        self.cov_w[i] = inv
+                        break
+            return self.cov_w
+
+        #  : Check Posterior Variance computation
+        def compute_posterior_variance(self, new_point):
+
+            #print shape
+            new_point = torch.reshape(new_point, (1,-1))
+
+            #get the representation
+            z = self.get_representation(new_point)
+            z = z.reshape(1,-1)
+            
+            #compute phi phi trans
             s = np.dot(z.T, z)
-            print(s.shape)
-            # inv = np.linalg.inv((s/self.sigma_n + 1/self.sigma*self.eye))
             A = s / self.sigma_n2 + 1 / self.sigma2 * self.eye
-            B = np.dot(z.T, y) / self.sigma_n2
-            reg_coeff = 0
 
-            
+            #compute inv
+            reg_coeff = 0
 
             for _ in range(10):
                 try:
                     # Compute inv
                     A = A + reg_coeff * self.eye
                     inv = np.linalg.inv(A)
+                
                 except Exception as e:
                     # in case computation failed
                     print(e)
                     reg_coeff += 10
-
-                # Store new posterior distributions using inv
-                else:
-                    self.mu_w[i] = inv.dot(B).squeeze()
-                    self.cov_w[i] = inv
-                    break
-        return self.cov_w
-
-#  : Check Posterior Variance computation
-    def compute_posterior_variance(self, new_point):
-
-        #print shape
-        new_point = torch.reshape(new_point, (1,-1))
-
-        #get the representation
-        z = self.get_representation(new_point)
-        z = z.reshape(1,-1)
-        
-        #compute phi phi trans
-        s = np.dot(z.T, z)
-        A = s / self.sigma_n2 + 1 / self.sigma2 * self.eye
-
-        #compute inv
-        reg_coeff = 0
-
-        for _ in range(10):
-            try:
-                # Compute inv
-                A = A + reg_coeff * self.eye
-                inv = np.linalg.inv(A)
             
-            except Exception as e:
-                # in case computation failed
-                print(e)
-                reg_coeff += 10
-        
-        #compute the post var
-        # inv = np.linalg.inv(A)   
-        # inv_new =   0.5 * (inv + inv.T)
-        post_var = np.trace(inv)
-        # eig_val, _ = LA.eig(inv)
-        # post_var = np.sum(eig_val)
-        # print (post_var)
-        
-        return post_var
+            #compute the post var
+            # inv = np.linalg.inv(A)   
+            # inv_new =   0.5 * (inv + inv.T)
+            post_var = np.trace(inv)
+            # eig_val, _ = LA.eig(inv)
+            # post_var = np.sum(eig_val)
+            # print (post_var)
+            
+            return post_var
 
     
     
@@ -403,16 +449,16 @@ class neural_bays_dx_tf(object):
         print ('after' + str(self.train_x.shape), str(self.train_y.shape))
         # return check_ksd
     
-    def select_samples(pruning_container,new_samples,new_gradients,addition_rule):
+    def select_samples(pruning_container,new_samples,new_gradients,new_ids,addition_rule):
 
         if addition_rule=='std':
             index = 0 
         elif addition_rule=='thin':
             index=-1
         elif addition_rule=='spmcmc':
-            index = pruning_container.best_index(candidate_points=new_samples, candidate_gradients=new_gradients)
+            index = pruning_container.best_index(candidate_points=new_samples, candidate_gradients=new_gradients, candidate_ids = new_ids)
 
-        return new_samples[index],new_gradients[index]
+        return new_samples[index],new_gradients[index], new_ids[index]
 
 
     def select_samples_d(pruning_container,new_samples,new_gradients,addition_rule):
@@ -499,7 +545,7 @@ class neural_bays_dx_tf(object):
 
                 #write : Update pruning container
                 kernel_type = 'rbf'
-                pruning_container = ksdp.PruningContainer(kernel_type=kernel_type,
+                pruning_container = PruningContainer(kernel_type=kernel_type,
                                                   h_method='dim' if kernel_type=='rbf' else None,
                                                   )
                 
@@ -534,8 +580,10 @@ class neural_bays_dx_tf(object):
                     batch_gradients = batch_gradients[idx]
                     
                     #get next
+                    """
                     if i == 100:
                         pdb.set_trace()
+                    """
                     #print("IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII ", i,"  IIIIIIIIIIIIIIIIIIIIIIIIIIIIIII")
                     next_sample, next_gradient = neural_bays_dx_tf.select_samples(pruning_container=pruning_container,
                                                                 new_samples=batch_samples,
@@ -554,7 +602,7 @@ class neural_bays_dx_tf(object):
                         min_samples = math.sqrt((step**(exponent)) * max(math.log(step + 1.0), 1.0))
                     
                     #implement pruning
-                    pruned = pruning_container.retain_to_cutoff(cutoff=EPSILON, min_samples=300)
+                    pruned = pruning_container.prune_to_cutoff(cutoff=EPSILON, min_samples=300)
                     
                     #save the pruned samples
                     pruned_samples.append(pruned)
@@ -576,7 +624,12 @@ class neural_bays_dx_tf(object):
                 #get the ids to keep
                 ids = [x for x in ids_total if x not in ids_pruned]
 
+                ids_keep = sorted(set(self.all_ids.tolist()) - set(expanded_pruned))
                 
+                ids_keep_shifted = [i - self.global_next_id if (i - self.global_next_id) >= 0  for i in ids_keep]
+
+                return ids_keep_shifted
+
             elif thin_type == 'random'  :
                 ids = np.random.choice(self.train_x.shape[0], 50, replace=False)      
 
@@ -656,7 +709,7 @@ class neural_bays_dx_tf(object):
 
                 #write : Update pruning container
                 kernel_type = 'rbf'
-                pruning_container = ksdp.PruningContainer(kernel_type=kernel_type,
+                pruning_container = PruningContainer(kernel_type=kernel_type,
                                                   h_method='dim' if kernel_type=='rbf' else None,
                                                   )
 
@@ -664,11 +717,11 @@ class neural_bays_dx_tf(object):
                 device = 'cuda' if torch.cuda.is_available() else 'cpu'
                 init_sample = torch.tensor(samples[0], dtype=torch.double).to(device)
                 init_gradient = torch.tensor(gradients[0], dtype=torch.double).to(device)
-                pruning_container.add_point(point=init_sample, gradient=init_gradient)
+                pruning_container.add_point(point=init_sample, gradient=init_gradient, global_id = self.global_next_id)
 
                 #Define the generatpr
                 sample_generator = ((torch.tensor(samples[i:i + 10],dtype=torch.double).to(device),
-                torch.tensor(gradients[i:i + 10], dtype=torch.double).to(device)) for i in range(0, samples.shape[0], 10))
+                    torch.tensor(gradients[i:i + 10], dtype=torch.double).to(device), torch.tensor(self.all_ids[i:i+10], dtype=torch.double).to(device)) for i in range(0, samples.shape[0], 10))
 
                 #implement new thining
                 addition_rule = 'spmcmc'
@@ -678,73 +731,81 @@ class neural_bays_dx_tf(object):
                 EPSILON = 0
                 pruned_samples = []
                 exponent = 1.0
+                
+                all_pruned_rep_ids = []
 
                 #Main loop
-                for step, (batch_samples, batch_gradients) in enumerate(sample_generator):
+                for step, (batch_samples, batch_gradients, ids) in enumerate(sample_generator):
 
 
                     #part 1
-                    _, idx = batch_samples.unique_consecutive(dim=0,return_inverse=True)
-                    idx = idx.unique()
+                    unique_samples, first_occ_idx,  inverse_idx = batch_samples.unique_consecutive(dim=0, return_inverse=True, return_index=True)
                     # print (idx)
-                    batch_samples = batch_samples[idx]
-                    batch_gradients = batch_gradients[idx]
+                    batch_samples = unique_samples
+                    batch_gradients = batch_gradients[first_occ_idx]
+                    ids = ids[first_occ_idx]
+
+
+                    rep_to_all_ids = {}
+                    for u, rep_pos in enumerate(first_occ_idx):
+                        rep_id = int(ids[u].item())                 # representative’s original id
+                        members_mask = (inverse_idx == u)
+                        members_ids  = self.all_ids[members_mask]       # all originals that collapse to this unique row
+                        rep_to_all_ids[rep_id] = members_ids.cpu().tolist()
 
                     #get next
-                    next_sample, next_gradient = neural_bays_dx_tf.select_samples(pruning_container=pruning_container,
+                    next_sample, next_gradient, next_id = neural_bays_dx_tf.select_samples(pruning_container=pruning_container,
                                                                 new_samples=batch_samples,
                                                                 new_gradients=batch_gradients,
+                                                                new_ids = ids,
                                                                 addition_rule= addition_rule)
 
 
                     #add to cont
-                    pruning_container.add_point(point=next_sample, gradient=next_gradient)
+                    pruning_container.add_point(point=next_sample, gradient=next_gradient, identity=int(next_id.item()))
 
-
+                    """
                     if exponent>(2.0-1e-10):
                         min_samples = step/2.0
 
                     else:
                         min_samples = math.sqrt((step**(exponent)) * max(math.log(step + 1.0), 1.0))
-
+                    """
+                    
+                    min_keep = max(5, samples.shape[0] // 3)
                     #implement pruning
-                    pruned = pruning_container.retain_to_cutoff(cutoff=EPSILON, min_samples=300)
+                    pruned, pruned_ids = pruning_container.prune_to_cutoff(cutoff=EPSILON, min_samples=min_keep)
 
                     #save the pruned samples
                     pruned_samples.append(pruned)
+                    all_pruned_rep_ids.extend(pruned_ids)
 
 
                 #clean the pruned samples
+                
+                pruned_rep_ids = all_pruned_rep_ids  # from prune_to_cutoff
+                # Expand: any duplicate of a pruned rep is also pruned
+                 
+                expanded_pruned = set()
+                for rid in all_pruned_rep_ids:
+                    expanded_pruned.update(rep_to_all_ids_total.get(rid, [rid]))
+                expanded_pruned = sorted(expanded_pruned)
 
-                pruned_new = [x[0].cpu().numpy()[0].tolist() for x in pruned_samples if x != []]
-                # print ('pruned ', len(pruned_new))
-
-                #get the ids of the pruned samples
-                ids_pruned = [samples.tolist().index(i) for i in pruned_new]
-                #print ('ids pruned ', ids_pruned)
-
-                #total samples
-                ids_total = list(np.arange(0,self.train_x_s.shape[0]))
-                #print ('ids total ', len(ids_total))
-
-                #get the ids to keep
-                ids = [x for x in ids_total if x not in ids_pruned]
-
-
+                
             elif thin_type == 'random'  :
                 ids = np.random.choice(self.train_x_s.shape[0], 50, replace=False)
 
 
 
             #get the updated data
-            self.train_x_s = self.train_x_s[ids]
-            self.train_y_s = self.train_y_s[ids]
-            self.rew_s = self.rew_s[ids]
+            self.train_x_s = self.train_x_s[ids[0]]
+            self.train_y_s = self.train_y_s[ids[0]]
+            self.rew_s = self.rew_s[ids[0]]
             #print ('after' + str(self.train_x_s.shape), str(self.train_y_s.shape))
 
 
             
-        return ids_pruned
+        return ids
         
     def get_ksd(self, thin_type, real = True):
         if real:
@@ -968,7 +1029,7 @@ class neural_bays_dx_tf(object):
             device = 'cuda' if torch.cuda.is_available() else 'cpu'
             init_sample = torch.tensor(samples[0], dtype=torch.double).to(device)
             init_gradient = torch.tensor(gradients[0], dtype=torch.double).to(device)
-            pruning_container.add_point(point=init_sample, gradient=init_gradient)
+            pruning_container.add_point(point=init_sample, gradient=init_gradient, global_index = 0 + self., batch_index = 0 + B)
 
             #Define the generatpr
             sample_generator = ((torch.tensor(samples[i:i + 10],dtype=torch.double).to(device),
@@ -1002,7 +1063,6 @@ class neural_bays_dx_tf(object):
 
 
                 #add to cont
-                pdb.set_trace()
                 pruning_container.add_point(point=next_sample, gradient=next_gradient)
 
 

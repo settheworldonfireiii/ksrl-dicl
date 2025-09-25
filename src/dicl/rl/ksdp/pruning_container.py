@@ -232,12 +232,12 @@ class PruningContainer:
         return pruned_samples
 
 
-
-    def retain_to_cutoff(self, cutoff, min_samples=300):
-
+    @torch.no_grad()
+    def prune_to_cutoff(self, cutoff, min_samples=None):
+        
 
         pruned_samples = []
-
+        
         if self.points.shape[0]<=min_samples:
             return pruned_samples
         """
@@ -255,22 +255,23 @@ class PruningContainer:
         #iteratively prune until cutoff is reached
 
         num_pruned = 0
-
+       
         #equality permitted to avoid breaking before starting
         while ksd_squared <= init_ksd_squared+cutoff:
             if (self.points.shape[0]-1)<min_samples:
                 return pruned_samples
-            #should instead be done in a loop -- IVAN
-            removal_ksd2_contrib,least_influential_point = torch.topk(self.ksd2_contrib,min_samples,largest=False)
+
+            removal_ksd2_contrib,least_influential_point = torch.topk(self.ksd2_contrib,1,largest=True)
 
             num_points = self.points.shape[0]
             ksd_squared = ((num_points**2)*ksd_squared-removal_ksd2_contrib) / (num_points-1)**2
-
+          
             #test if removing point exceeds cutoff
-        
-            num_pruned+=1
-            pruned_samples.append(self.points[least_influential_point])
-            #self.update_K_info(method='remove_row',removed_row_index=least_influential_point)
+            if ksd_squared > init_ksd_squared+cutoff:
+                return pruned_samples
+            else:
+                num_pruned+=1
+                pruned_samples.append(self.points[least_influential_point])
+                self.update_K_info(method='remove_row',removed_row_index=least_influential_point)
 
         return pruned_samples
-

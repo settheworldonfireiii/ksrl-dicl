@@ -18,7 +18,7 @@ import torch.optim as optim
 from torch.utils.tensorboard import SummaryWriter
 import tyro
 
-from stable_baselines3.common.buffers import ReplayBuffer
+from stable_baselines3.common.buffers import ReplayBuffer, ReplayBufferSamples
 
 import gymnasium as gym
 from gymnasium import spaces
@@ -27,14 +27,12 @@ from transformers import LlamaForCausalLM, AutoTokenizer
 
 from dicl import dicl
 
-
-
-
-
 import tensorflow.compat.v1 as tf
 from .tf_models.constructor import construct_shallow_model, construct_shallow_cost_model, construct_model, construct_cost_model
 import pdb
 #import ksdp
+
+
 from .ksdp import *
 from .ksdp import utils
 from .ksdp import ksd
@@ -42,10 +40,12 @@ from .ksdp import ksd
 from .NB_dx_tf_new import neural_bays_dx_tf
 #import ksdp
 
+
 try:
     import psutil
 except ImportError:
     psutil = None
+
 
 @dataclass
 class Args:
@@ -294,14 +294,16 @@ class CSVLogger:
 
 def make_env(env_id, seed, idx, capture_video, run_name):
     def thunk():
-        render = "rgb_array" if (capture_video and idx == 0) else None
-        env = gym.make(env_id, render_mode=render)
-        env = gym.wrappers.TimeLimit(env, max_episode_steps=200)
-        env = gym.wrappers.RecordEpisodeStatistics(env, buffer_length=1000)
-        obs, info = env.reset(seed=seed + idx)  # gymnasium reset signature
+        if capture_video and idx == 0:
+            env = gym.make(env_id, render_mode="rgb_array")
+            env = gym.wrappers.RecordVideo(env, f"videos/{run_name}")
+        else:
+            env = gym.make(env_id)
+        env = gym.wrappers.RecordEpisodeStatistics(env)
+        env.action_space.seed(seed)
         return env
-    return thunk
 
+    return thunk
 
 
 # ALGO LOGIC: initialize agent here:
@@ -381,7 +383,6 @@ class Actor(nn.Module):
 def main():
     args = tyro.cli(Args)
     tf.disable_v2_behavior()
-
     run_name = f"{args.env_id}__{args.exp_name}__{args.seed}__{int(time.time())}"
 
     writer = SummaryWriter(f"{args.path}/runs/{run_name}")
@@ -411,21 +412,11 @@ def main():
     envs = gym.vector.SyncVectorEnv(
         [make_env(args.env_id, args.seed, 0, args.capture_video, run_name)]
     )
-    #envs = gym.wrappers.Autoreset(envs)
-
-
     assert isinstance(
         envs.single_action_space, gym.spaces.Box
     ), "only continuous action space is supported"
 
     actor = Actor(envs).to(device)
-    """ 
-    key = jax.random.PRNGKey(42)
-    if args.env_id == "Pendulum":
-        bll = BLL("dx", 3, 1, key = key)
-    elif args.env_id[:11] == "HalfCheetah":
-        bll = BLL("dx", 17, 6, key = key)
-    """
     qf1 = SoftQNetwork(envs).to(device)
     qf2 = SoftQNetwork(envs).to(device)
     qf1_target = SoftQNetwork(envs).to(device)
@@ -483,12 +474,11 @@ def main():
     # ----------- define n_observations and n_actions -----------
     n_observations = envs.single_observation_space.shape[0]
     action_shape = envs.single_action_space.shape[0]
- 
-    """ 
+
+
     dx_model = construct_shallow_model(obs_dim=n_observations, act_dim=action_shape, hidden_dim=200, num_networks=1, num_elites=1)
-    print("BEFORE NEURAL BAYS")
+    #print("BEFORE NEURAL BAYS")
     my_dx = neural_bays_dx_tf(args, dx_model, "dx", n_observations, sigma_n2=1e-3**2,sigma2=1e1**2)
-    """
     # other counters
     started_sampling = False
     step_started_sampling = 0
@@ -505,12 +495,7 @@ def main():
                 actor.state_dict(),
                 f"{args.path}/runs/{run_name}/actor_checkpoint_{global_step}.pth",
             )
-         # ------- This is interaction with environment -------
-        """ 
-        if global_step % 1000 == 0:
-            #PROBABLY WILL PUT INTO SOME OTHER PLACE
-            my_dx.sample()
-        """
+
         # ------- This is interaction with environment -------
         if global_step % args.interact_every == 0:
             for _ in range(args.interact_every):
@@ -538,44 +523,6 @@ def main():
 
                 # TRY NOT TO MODIFY: execute the game and log data.
                 next_obs, rewards, terminations, truncations, infos = envs.step(actions)
-                done_any = bool(terminations.any() or truncations.any())
-
-                if done_any and "final_info" in infos:
-                    pdb.set_trace()
-                    for finfo in infos["final_info"]:
-                        if finfo is not None and "episode" in finfo:
-                            pdb.set_trace()
-                            ep_return = float(finfo["episode"]["r"])
-                            ep_length = int(finfo["episode"]["l"])
-                            writer.add_scalar("charts/episodic_return", ep_return, global_step)
-                            writer.add_scalar("charts/episodic_length", ep_length, global_step)
-                if rewards:
-                    episode_step = 0
-                    for r in rewards:
-                        writer.add_scalar(
-                            "charts/episodic_return", r, global_step
-                        )
-                        """
-                        # Log to CSV
-                        csv_logger.log(
-                            {
-                                "global_step": global_step,
-                                "return": float(info["episode"]["r"]),
-                            }
-                        )
-                        writer.add_scalar(
-                            "charts/episodic_length", info["episode"]["l"], global_step
-                        )
-                        writer.add_scalar(
-                            "charts/replay_buffer_size", rb.pos, global_step
-                        )
-                        writer.add_scalar(
-                            "charts/llm_replay_buffer_size", rb_llm.pos, global_step
-                        )
-                        """
-                        break
-
-
                 infos["truncations"] = truncations
                 infos["auxiliary_actions"] = auxiliary_actions
                 global_step += 1
@@ -612,11 +559,12 @@ def main():
 
                 # TRY NOT TO MODIFY: save data to rb; handle `final_observation`
                 real_next_obs = next_obs.copy()
-                """
                 for idx, trunc in enumerate(truncations):
+                    """
                     if trunc:
                         real_next_obs[idx] = infos["final_observation"][idx]
-                """
+
+                    """
                 rb.add(obs, real_next_obs, actions, rewards, terminations, infos)
                 if (
                     episode_step < args.burnin_llm
@@ -633,8 +581,43 @@ def main():
         if global_step > args.learning_starts:
             local_step = 0
             for _ in range(args.interact_every):
-                # ------- sample from real replay buffer --------
+                 # ------- sample from real replay buffer --------
                 data = rb.sample(args.batch_size)
+
+
+
+                """
+                for i in range(len(data[0])):
+                    #pdb.set_trace()
+                    if args.env_id == "Pendulum":
+                        xu = torch.cat((torch.tensor(tf.get_static_value(data[0][i].squeeze().cpu())).double(), torch.tensor(tf.get_static_value(data[1][i].cpu())).double()))
+                    else:
+                        xu = torch.cat((torch.tensor(tf.get_static_value(data[0][i].squeeze().cpu())).double(), torch.tensor(tf.get_static_value(data[1][i].squeeze().cpu())).double()))
+                    # print("XUXUXU ", xu)
+                    y = torch.tensor(tf.get_static_value(data[2][i].cpu())).squeeze() - torch.tensor(tf.get_static_value(data[0][i].cpu())).squeeze()
+                    shappe = my_dx.add_data(new_x=xu, new_y=y, new_r = torch.tensor(tf.get_static_value(data[4][i].cpu())).squeeze(0))
+                    shappe = my_dx.add_data(new_x=xu, new_y=y, new_r = torch.tensor(tf.get_static_value(data[4][i].cpu())).squeeze(0), real=False)
+                #print("GLOBAL STEP ", global_step)
+                #print("LOCAL STEP ", local_step)
+                #my_dx.train(100)
+                my_dx.generate_latent_z(True)
+                my_dx.generate_latent_z(False)
+                post_var = my_dx.update_bays_reg(False)
+                #ksd_val = my_dx.get_ksd('ksd', False)
+                ids = my_dx.thin_data_new('ksd', False)
+                idx = torch.tensor(ids, dtype=torch.long, device=data.observations.device)
+
+                subset = ReplayBufferSamples(
+                    observations      = data.observations.index_select(0, idx),
+                    actions           = data.actions.index_select(0, idx),
+                    next_observations = data.next_observations.index_select(0, idx),
+                    dones             = data.dones.index_select(0, idx),
+                    rewards           = data.rewards.index_select(0, idx),
+                    discounts         = None if data.discounts is None
+                                        else data.discounts.index_select(0, idx),
+                )
+                """
+                #pdb.set_trace()
 
                 # ------- Data Augmentation using LLM -------
                 # 1. Generate transformed transition
@@ -674,8 +657,6 @@ def main():
                         )
                     )
                     # 1.2. Do ICL
-                    for i in range(batches_to_train_on[0].observations.shape[0]):
-                        pass        
                     if args.method == "vicl":
                         time_series = rb.observations[
                             start_index : start_index + args.context_length
@@ -766,8 +747,8 @@ def main():
                             )
 
                 batches_to_train_on = [copy.copy(data)]
-                """
-                if (global_step + local_step)%250 == 0:
+                coeff_batches_to_train_on = [1.0]
+                if ((global_step + local_step)%250 == 0) and (global_step + local_step) <( args.llm_learning_starts  - args.learning_starts  + step_started_sampling):
                     for i in range(batches_to_train_on[0].observations.shape[0]):
                         if args.env_id == "Pendulum":
                             xu = torch.cat((torch.tensor(tf.get_static_value(batches_to_train_on[0].observations[i].squeeze().cpu())).double(), torch.tensor(tf.get_static_value(batches_to_train_on[0].actions[i].cpu())).double()))
@@ -776,15 +757,12 @@ def main():
                         # print("XUXUXU ", xu)
                         y = torch.tensor(tf.get_static_value(batches_to_train_on[0].next_observations[i].cpu())).squeeze() - torch.tensor(tf.get_static_value(batches_to_train_on[0].observations[i].cpu())).squeeze()
                         shappe = my_dx.add_data(new_x=xu, new_y=y, new_r = torch.tensor(tf.get_static_value(batches_to_train_on[0].rewards[i].cpu())).squeeze(0))
-
-                    print("GLOBAL STEP ", global_step)
-                    print("LOCAL STEP ", local_step)
+                    #print("GLOBAL STEP ", global_step)
+                    #print("LOCAL STEP ", local_step)
                     my_dx.train(100)
                     my_dx.generate_latent_z(True)
                     post_var = my_dx.update_bays_reg()
                     ksd_val = my_dx.get_ksd('ksd')
-                """
-                coeff_batches_to_train_on = [1.0]
 
                 # 3. Sample from rb and transformed_rb to train ActorCritic
                 if (
@@ -793,13 +771,80 @@ def main():
                     - args.learning_starts
                     + step_started_sampling
                 ) and started_sampling:
-                    data_llm = rb_llm.sample(args.llm_batch_size)
+                    # we might anticipate 3x reduction of batch size by thinning (TODO: ENCODE THIS IN THIN_DATA_NEW)
+                    # hence, we increase llm_batch_size by 3
+                    data_llm = rb_llm.sample(3*args.llm_batch_size)
                     # concatenate data and data_llm
                     if args.train_only_from_llm:
                         # data = data_llm
+                        if ((global_step + local_step)%250 == 0):
+                            #pdb.set_trace()
+                            for i in range(len(data_llm[0])):
+                                #pdb.set_trace()
+                                if args.env_id == "Pendulum":
+                                    xu = torch.cat((torch.tensor(tf.get_static_value(data_llm[0][i].squeeze().cpu())).double(), torch.tensor(tf.get_static_value(data_llm[1][i].cpu())).double()))
+                                else:
+                                    xu = torch.cat((torch.tensor(tf.get_static_value(data_llm[0][i].squeeze().cpu())).double(), torch.tensor(tf.get_static_value(data_llm[1][i].squeeze().cpu())).double()))
+                                # print("XUXUXU ", xu)
+                                y = torch.tensor(tf.get_static_value(data_llm[2][i].cpu())).squeeze() - torch.tensor(tf.get_static_value(data_llm[0][i].cpu())).squeeze()
+                                shappe = my_dx.add_data(new_x=xu, new_y=y, new_r = torch.tensor(tf.get_static_value(data_llm[4][i].cpu())).squeeze(0), real=False)
+                            #print("GLOBAL STEP ", global_step)
+                            #print("LOCAL STEP ", local_step)
+                            #my_dx.train(100)
+                            my_dx.generate_latent_z(False)
+                            if (global_step + local_step)%1000 == 0:
+                                post_var = my_dx.update_bays_reg(False)
+                            #ksd_val = my_dx.get_ksd('ksd', False)
+                            ids = my_dx.thin_data_new('ksd', False)
+                            """
+                            idx = torch.tensor(ids, dtype=torch.long, device=data_llm.observations.device)
+
+                            subset = ReplayBufferSamples(
+                                observations      = data_llm.observations.index_select(0, idx),
+                                actions           = data_llm.actions.index_select(0, idx),
+                                next_observations = data_llm.next_observations.index_select(0, idx),
+                                dones             = data_llm.dones.index_select(0, idx),
+                                rewards           = data_llm.rewards.index_select(0, idx),
+                                discounts         = None if data_llm.discounts is None
+                                                    else data_llm.discounts.index_select(0, idx),
+                            )
+                            """
+
                         batches_to_train_on = [copy.copy(data_llm)]
                         coeff_batches_to_train_on = [1.0]
+
+
                     else:
+                        for i in range(len(data_llm[0])):
+                            #pdb.set_trace()
+                            if args.env_id == "Pendulum":
+                                xu = torch.cat((torch.tensor(tf.get_static_value(data_llm[0][i].squeeze().cpu())).double(), torch.tensor(tf.get_static_value(data_llm[1][i].cpu())).double()))
+                            else:
+                                xu = torch.cat((torch.tensor(tf.get_static_value(data_llm[0][i].squeeze().cpu())).double(), torch.tensor(tf.get_static_value(data_llm[1][i].squeeze().cpu())).double()))
+                            # print("XUXUXU ", xu)
+                            y = torch.tensor(tf.get_static_value(data_llm[2][i].cpu())).squeeze() - torch.tensor(tf.get_static_value(data_llm[0][i].cpu())).squeeze()
+                            shappe = my_dx.add_data(new_x=xu, new_y=y, new_r = torch.tensor(tf.get_static_value(data_llm[4][i].cpu())).squeeze(0), real=False)
+                        #print("GLOBAL STEP ", global_step)
+                        #print("LOCAL STEP ", local_step)
+                        #my_dx.train(100) 
+                        my_dx.generate_latent_z(False)
+                        if (global_step + local_step)%1000 == 0:
+                            post_var = my_dx.update_bays_reg(False)
+                        #ksd_val = my_dx.get_ksd('ksd', False)
+                        ids = my_dx.thin_data_new('ksd', False)
+                        """
+                        idx = torch.tensor(ids, dtype=torch.long, device=data_llm.observations.device)
+
+                        subset = ReplayBufferSamples(
+                            observations      = data_llm.observations.index_select(0, idx),
+                            actions           = data_llm.actions.index_select(0, idx),
+                            next_observations = data_llm.next_observations.index_select(0, idx),
+                            dones             = data_llm.dones.index_select(0, idx),
+                            rewards           = data_llm.rewards.index_select(0, idx),
+                            discounts         = None if data_llm.discounts is None
+                                                else data_llm.discounts.index_select(0, idx),
+                        )
+                        """
                         batches_to_train_on.append(copy.copy(data_llm))
                         coeff_batches_to_train_on.append(
                             float(args.llm_batch_size / args.batch_size)
@@ -881,6 +926,7 @@ def main():
                         target_param.data.copy_(
                             args.tau * param.data + (1 - args.tau) * target_param.data
                         )
+
                 if (global_step + local_step) % 100 == 0:
                     writer.add_scalar(
                         "losses/qf1_values", qf1_a_values.mean().item(), global_step
