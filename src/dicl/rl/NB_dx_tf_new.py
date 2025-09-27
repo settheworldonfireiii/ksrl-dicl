@@ -66,9 +66,9 @@ class neural_bays_dx_tf(object):
         self.curr_ids = []
 
     #primary main code where data is added
-    def add_data(self, new_x, new_y, new_r, real = True):
+    def add_data(self, new_x, new_y, new_r, real = True, newiter = True):
         B = new_x.shape[0]
-        self.curr_ids = list(range(self.all_ids, self.all_ids + B))
+        self.curr_ids = list(range(B))
         self.global_next_id += B
         self.all_ids.extend(self.curr_ids)
         if real:
@@ -101,35 +101,45 @@ class neural_bays_dx_tf(object):
                 return self.train_x.shape
         else:
             if self.train_x_s is None:
-                self.train_x_s = new_x
-                self.train_y_s = new_y
+            
+                self.train_x_s = _to_np(new_x)
+                self.train_y_s = _to_np(new_y)
                 #add reward
-                self.rew_s =  new_r
-
-            else:
-
-                #add the thinning condition : Based on Posterior variane (if posterior variance > threshold)
-                tx = _to_np(self.train_x_s)
-                nx = _to_np(new_x)
-                self.train_x_s = np.vstack((tx, nx))
-                #print(tx.shape)
-                #print(nx.shape)
-                #print(self.train_x_s.shape)
-                ty = _to_np(self.train_y_s)
-                ny = _to_np(new_y)
-                tr = _to_np(self.rew_s)
-                nr = _to_np(new_r)
-
-                self.train_x_s = np.vstack((tx, nx))
-
-                self.train_y_s = np.vstack((ty, ny))
-                # print (torch.is_tensor(self.train_x))
-                #add rewards
-                self.rew_s = np.vstack((tr, nr))
+                self.rew_s =  _to_np(new_r)
                 return self.train_x_s.shape
+        
 
+            
+            else:
+                if newiter == True:
+                    self.train_x_s = _to_np(new_x)
+                    self.train_y_s = _to_np(new_y)
+                    #add reward
+                    self.rew_s =  _to_np(new_r)
+                    return self.train_x_s.shape
+                else:
+                    #add the thinning condition : Based on Posterior variane (if posterior variance > threshold)
+                    tx = _to_np(self.train_x_s)
+                    nx = _to_np(new_x)
+                    self.train_x_s = np.vstack((tx, nx))
+                    #print(tx.shape)
+                    #print(nx.shape)
+                    #print(self.train_x_s.shape)
+                    ty = _to_np(self.train_y_s)
+                    ny = _to_np(new_y)
+                    tr = _to_np(self.rew_s)
+                    nr = _to_np(new_r)
 
+                    self.train_x_s = np.vstack((tx, nx))
+
+                    self.train_y_s = np.vstack((ty, ny))
+                    # print (torch.is_tensor(self.train_x))
+                    #add rewards
+                    self.rew_s = np.vstack((tr, nr))
+                    return self.train_x_s.shape
                 
+
+                    
 
     def get_shape(self):
         return self.train_x.shape[0]
@@ -456,7 +466,7 @@ class neural_bays_dx_tf(object):
         elif addition_rule=='thin':
             index=-1
         elif addition_rule=='spmcmc':
-            index = pruning_container.best_index(candidate_points=new_samples, candidate_gradients=new_gradients, candidate_ids = new_ids)
+            index = pruning_container.best_index(candidate_points=new_samples, candidate_gradients=new_gradients)
 
         return new_samples[index],new_gradients[index], new_ids[index]
 
@@ -536,7 +546,7 @@ class neural_bays_dx_tf(object):
 
                 #check ksd value
                 # samples = torch.Tensor(smpl)
-                # gradients = torch.Tensor(grad)
+               # gradients = torch.Tensor(grad)
                 samples = smpl
                 gradients = grad
 
@@ -626,9 +636,8 @@ class neural_bays_dx_tf(object):
 
                 ids_keep = sorted(set(self.all_ids.tolist()) - set(expanded_pruned))
                 
-                ids_keep_shifted = [i - self.global_next_id if (i - self.global_next_id) >= 0  for i in ids_keep]
 
-                return ids_keep_shifted
+                return ids_keep
 
             elif thin_type == 'random'  :
                 ids = np.random.choice(self.train_x.shape[0], 50, replace=False)      
@@ -721,7 +730,7 @@ class neural_bays_dx_tf(object):
 
                 #Define the generatpr
                 sample_generator = ((torch.tensor(samples[i:i + 10],dtype=torch.double).to(device),
-                    torch.tensor(gradients[i:i + 10], dtype=torch.double).to(device), torch.tensor(self.all_ids[i:i+10], dtype=torch.double).to(device)) for i in range(0, samples.shape[0], 10))
+                    torch.tensor(gradients[i:i + 10], dtype=torch.double).to(device), torch.tensor(self.curr_ids[i:i+10], dtype=torch.double).to(device)) for i in range(0, samples.shape[0], 10))
 
                 #implement new thining
                 addition_rule = 'spmcmc'
@@ -739,20 +748,54 @@ class neural_bays_dx_tf(object):
 
 
                     #part 1
-                    unique_samples, first_occ_idx,  inverse_idx = batch_samples.unique_consecutive(dim=0, return_inverse=True, return_index=True)
+                    #unique_samples, first_occ_idx,  inverse_idx = batch_samples.unique_consecutive(dim=0, return_inverse=True, return_index=True)
+                    ids = ids.to(batch_samples.device).long() 
+                    
+                    unique_samples, inverse_idx = torch.unique(batch_samples, dim=0, return_inverse=True)
+                    # unique_samples: (U, d)
+                    # inverse_idx: (B,) where inverse_idx[j] ∈ {0..U-1} tells which unique row row j maps to
+
+                    # 2) Compute first occurrence index for each unique row
+                    U = unique_samples.size(0)
+                    first_occ_idx = torch.empty(U, dtype=torch.long, device=batch_samples.device)
+
+                    # Fast path if your torch has scatter_reduce (1.12+):
+                    if hasattr(torch.Tensor, 'scatter_reduce'):
+                        # make positions 0..B-1
+                        pos = torch.arange(inverse_idx.numel(), device=batch_samples.device, dtype=torch.long)
+                        # init with a big value, then take amin per group
+                        big = torch.full((U,), pos.max()+1, device=batch_samples.device, dtype=torch.long)
+                        first_occ_idx = big.scatter_reduce(dim=0, index=inverse_idx, src=pos, reduce='amin', include_self=True)
+                    else:
+                        # Fallback: small loop (U ≤ B, fine for batches)
+                        for u in range(U):
+                            first_occ_idx[u] = (inverse_idx == u).nonzero(as_tuple=True)[0][0]
+                                        
                     # print (idx)
                     batch_samples = unique_samples
                     batch_gradients = batch_gradients[first_occ_idx]
+                    ids_nodedup = ids
                     ids = ids[first_occ_idx]
+                    ids = ids.to(batch_samples.device).long()
 
+                    #ids_rep_cpu = ids_nodedup.cpu()
 
+                    #ids_full_cpu = ids.cpu()
+                     
                     rep_to_all_ids = {}
+                    """
                     for u, rep_pos in enumerate(first_occ_idx):
                         rep_id = int(ids[u].item())                 # representative’s original id
                         members_mask = (inverse_idx == u)
-                        members_ids  = self.all_ids[members_mask]       # all originals that collapse to this unique row
+                        members_ids  = ids_nodedup[members_mask]       # all originals that collapse to this unique row
                         rep_to_all_ids[rep_id] = members_ids.cpu().tolist()
+                    """
 
+                    for u in range(U):
+                        rep_id = int(ids_nodedup[u].item())          # safe: convert on CPU
+                        members_mask = (inverse_idx == u)            # (B, ) on device
+                        members_ids  = ids_nodedup[members_mask]        # tensor on device, length = #members
+                        rep_to_all_ids[rep_id] = members_ids.detach().cpu().tolist()
                     #get next
                     next_sample, next_gradient, next_id = neural_bays_dx_tf.select_samples(pruning_container=pruning_container,
                                                                 new_samples=batch_samples,
@@ -762,7 +805,7 @@ class neural_bays_dx_tf(object):
 
 
                     #add to cont
-                    pruning_container.add_point(point=next_sample, gradient=next_gradient, identity=int(next_id.item()))
+                    pruning_container.add_point(point=next_sample, gradient=next_gradient, global_id=int(next_id.item()))
 
                     """
                     if exponent>(2.0-1e-10):
@@ -790,7 +833,7 @@ class neural_bays_dx_tf(object):
                 for rid in all_pruned_rep_ids:
                     expanded_pruned.update(rep_to_all_ids_total.get(rid, [rid]))
                 expanded_pruned = sorted(expanded_pruned)
-
+                return expanded_pruned
                 
             elif thin_type == 'random'  :
                 ids = np.random.choice(self.train_x_s.shape[0], 50, replace=False)
@@ -1029,7 +1072,7 @@ class neural_bays_dx_tf(object):
             device = 'cuda' if torch.cuda.is_available() else 'cpu'
             init_sample = torch.tensor(samples[0], dtype=torch.double).to(device)
             init_gradient = torch.tensor(gradients[0], dtype=torch.double).to(device)
-            pruning_container.add_point(point=init_sample, gradient=init_gradient, global_index = 0 + self., batch_index = 0 + B)
+            pruning_container.add_point(point=init_sample, gradient=init_gradient, global_index = 0, batch_index = 0 + B)
 
             #Define the generatpr
             sample_generator = ((torch.tensor(samples[i:i + 10],dtype=torch.double).to(device),

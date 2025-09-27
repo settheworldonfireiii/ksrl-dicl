@@ -7,6 +7,7 @@ class PruningContainer:
         self.kernel_type = kernel_type
         self.h_method=h_method
         self.full_mat=full_mat
+        self.ids = []
    
     @torch.no_grad()
     def best_index(self, candidate_points, candidate_gradients):
@@ -36,13 +37,14 @@ class PruningContainer:
 
 
     @torch.no_grad()
-    def add_point(self, point, gradient):
+    def add_point(self, point, gradient, global_id):
         #Add point and gradient to container and update K matrix
         
         try:
-            assert hasattr(self,'points') and hasattr(self,'gradients') 
+            assert hasattr(self,'points') and hasattr(self,'gradients') and hasattr(self,'ids') 
             self.points = torch.cat([self.points,point.unsqueeze(0)])
             self.gradients = torch.cat([self.gradients,gradient.unsqueeze(0)])
+            self.ids.append(global_id)
             self.update_K_info(method='add_row')
 
         except Exception as e:
@@ -55,6 +57,7 @@ class PruningContainer:
             self.points = point.unsqueeze(0)
             self.gradients = gradient.unsqueeze(0)
             self.update_K_info(method="from_scratch")
+            self.ids = [global_id]
 
 
     @torch.no_grad()
@@ -84,8 +87,8 @@ class PruningContainer:
             self.ksd2_contrib = self.ksd2_contrib+2.0*new_row[:-1]
             #add new row
             new_row_sum = new_row.sum()
-            self.ksd2_contrib = torch.cat([self.ksd2_contrib,(2.0*new_row_sum-new_row[-1]).reshape(1)])
-            
+            selfksd2_contrib = torch.cat([self.ksd2_contrib,(2.0*new_row_sum-new_row[-1]).reshape(1)])
+
             self.row_sums += new_row[:-1]
             self.row_sums = torch.cat([self.row_sums,new_row_sum.reshape(1)])
 
@@ -104,7 +107,7 @@ class PruningContainer:
 
             self.ksd2_contrib = self.ksd2_contrib-removed_row
             self.ksd2_contrib = torch.cat([self.ksd2_contrib[:removed_row_index],self.ksd2_contrib[removed_row_index+1:]]) 
-            
+                
             self.row_sums -= removed_row
             self.row_sums = torch.cat([self.row_sums[:removed_row_index],self.row_sums[removed_row_index+1:]])
             
@@ -134,7 +137,7 @@ class PruningContainer:
 
 
         elif method=='add_row':
-            #if we update a row we should only have one new sample
+            #if e update a row we should only have one new sample
             assert self.K_matrix.shape[0]==self.points.shape[0]-1
             assert self.ksd2_contrib.shape[0]==self.points.shape[0]-1
             h = ksd._get_h(samples=self.points,h_method=self.h_method) if self.kernel_type=='rbf' else None
@@ -237,9 +240,9 @@ class PruningContainer:
         
 
         pruned_samples = []
-        
+        pruned_ids = [] 
         if self.points.shape[0]<=min_samples:
-            return pruned_samples
+            return pruned_samples, pruned_ids
         """
         test_ksd_squared = self.K_matrix.sum()/(self.K_matrix.shape[0]**2)
         print("Row sum",self.row_sums)
@@ -259,7 +262,7 @@ class PruningContainer:
         #equality permitted to avoid breaking before starting
         while ksd_squared <= init_ksd_squared+cutoff:
             if (self.points.shape[0]-1)<min_samples:
-                return pruned_samples
+                return pruned_samples, pruned_ids
 
             removal_ksd2_contrib,least_influential_point = torch.topk(self.ksd2_contrib,1,largest=True)
 
@@ -268,10 +271,11 @@ class PruningContainer:
           
             #test if removing point exceeds cutoff
             if ksd_squared > init_ksd_squared+cutoff:
-                return pruned_samples
+                return pruned_samples, pruned_ids
             else:
                 num_pruned+=1
                 pruned_samples.append(self.points[least_influential_point])
+                pruned_ids.append(self.ids[least_influential_point])
                 self.update_K_info(method='remove_row',removed_row_index=least_influential_point)
 
-        return pruned_samples
+        return pruned_samples, pruned_id

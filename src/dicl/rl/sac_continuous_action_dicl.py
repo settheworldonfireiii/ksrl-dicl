@@ -763,6 +763,41 @@ def main():
                     my_dx.generate_latent_z(True)
                     post_var = my_dx.update_bays_reg()
                     ksd_val = my_dx.get_ksd('ksd')
+                if ((global_step + local_step)%1 == 0):
+                            #pdb.set_trace()
+                            newiter = True
+                            for i in range(len(data[0])):
+                                #pdb.set_trace()
+                                if args.env_id == "Pendulum":
+                                    xu = torch.cat((torch.tensor(tf.get_static_value(data[0][i].squeeze().cpu())).double(), torch.tensor(tf.get_static_value(data[1][i].cpu())).double()))
+                                else:
+                                    xu = torch.cat((torch.tensor(tf.get_static_value(data[0][i].squeeze().cpu())).double(), torch.tensor(tf.get_static_value(data[1][i].squeeze().cpu())).double()))
+                                # print("XUXUXU ", xu)
+                                y = torch.tensor(tf.get_static_value(data[2][i].cpu())).squeeze() - torch.tensor(tf.get_static_value(data[0][i].cpu())).squeeze()
+                                shappe = my_dx.add_data(new_x=xu, new_y=y, new_r = torch.tensor(tf.get_static_value(data[4][i].cpu())).squeeze(0), real=False, newiter = newiter)
+                                newiter = False
+                            #print("GLOBAL STEP ", global_step)
+                            #print("LOCAL STEP ", local_step)
+                            #my_dx.train(100)
+                            my_dx.generate_latent_z(False)
+                            #if (global_step + local_step)%1000 == 0:
+                            #    post_var = my_dx.update_bays_reg(False)
+                            #ksd_val = my_dx.get_ksd('ksd', False)
+                            ids = my_dx.thin_data_new('ksd', False)
+
+                            idx = torch.tensor(ids, dtype=torch.long, device=data_llm.observations.device)
+
+                            subset = ReplayBufferSamples(
+                                observations      = data.observations.index_select(0, idx),
+                                actions           = data.actions.index_select(0, idx),
+                                next_observations = data.next_observations.index_select(0, idx),
+                                dones             = data.dones.index_select(0, idx),
+                                rewards           = data.rewards.index_select(0, idx),
+                                discounts         = None if data.discounts is None
+                                                    else data.discounts.index_select(0, idx),
+                            )
+
+
 
                 # 3. Sample from rb and transformed_rb to train ActorCritic
                 if (
@@ -775,6 +810,7 @@ def main():
                     # hence, we increase llm_batch_size by 3
                     data_llm = rb_llm.sample(3*args.llm_batch_size)
                     # concatenate data and data_llm
+                    
                     if args.train_only_from_llm:
                         # data = data_llm
                         if ((global_step + local_step)%250 == 0):
@@ -792,11 +828,11 @@ def main():
                             #print("LOCAL STEP ", local_step)
                             #my_dx.train(100)
                             my_dx.generate_latent_z(False)
-                            if (global_step + local_step)%1000 == 0:
-                                post_var = my_dx.update_bays_reg(False)
+                            #if (global_step + local_step)%1000 == 0:
+                            #    post_var = my_dx.update_bays_reg(False)
                             #ksd_val = my_dx.get_ksd('ksd', False)
                             ids = my_dx.thin_data_new('ksd', False)
-                            """
+                            
                             idx = torch.tensor(ids, dtype=torch.long, device=data_llm.observations.device)
 
                             subset = ReplayBufferSamples(
@@ -808,7 +844,7 @@ def main():
                                 discounts         = None if data_llm.discounts is None
                                                     else data_llm.discounts.index_select(0, idx),
                             )
-                            """
+                            
 
                         batches_to_train_on = [copy.copy(data_llm)]
                         coeff_batches_to_train_on = [1.0]
@@ -832,7 +868,7 @@ def main():
                             post_var = my_dx.update_bays_reg(False)
                         #ksd_val = my_dx.get_ksd('ksd', False)
                         ids = my_dx.thin_data_new('ksd', False)
-                        """
+                        
                         idx = torch.tensor(ids, dtype=torch.long, device=data_llm.observations.device)
 
                         subset = ReplayBufferSamples(
@@ -844,7 +880,7 @@ def main():
                             discounts         = None if data_llm.discounts is None
                                                 else data_llm.discounts.index_select(0, idx),
                         )
-                        """
+                        
                         batches_to_train_on.append(copy.copy(data_llm))
                         coeff_batches_to_train_on.append(
                             float(args.llm_batch_size / args.batch_size)
