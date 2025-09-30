@@ -850,7 +850,7 @@ def main():
                             )
                            
                         
-                        batches_to_train_on = [copy.copy(data_llm)]
+                        batches_to_train_on = [copy.copy(subset)]
                         coeff_batches_to_train_on = [1.0]
 
 
@@ -890,7 +890,7 @@ def main():
                             )
                        
                         
-                        batches_to_train_on.append(copy.copy(data_llm))
+                        batches_to_train_on.append(copy.copy(subset))
                         coeff_batches_to_train_on.append(
                             float(args.llm_batch_size / args.batch_size)
                         )
