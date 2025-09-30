@@ -192,8 +192,8 @@ class BNN:
                                                 shape=[self.num_nets, None, self.layers[-1].get_output_dim() // 2],
                                                 name="training_targets")
             train_loss = tf.compat.v1.reduce_sum(self._compile_losses(self.sy_train_in, self.sy_train_targ, inc_var_loss=True))
-            print("DECAYS ", self.decays)
-            print("PROBABLY PREDICTIONS ", self.sy_train_in)
+            #print("DECAYS ", self.decays)
+            #print("PROBABLY PREDICTIONS ", self.sy_train_in)
             train_loss += tf.add_n(self.decays)
             train_loss += 0.01 * tf.compat.v1.reduce_sum(self.max_logvar) - 0.01 * tf.compat.v1.reduce_sum(self.min_logvar)
             self.mse_loss = self._compile_losses(self.sy_train_in, self.sy_train_targ, inc_var_loss=False)
@@ -325,6 +325,7 @@ class BNN:
 
         Returns: None
         """
+        hide_progress = True
         def shuffle_rows(arr):
             idxs = np.argsort(np.random.uniform(size=arr.shape), axis=-1)
             return arr[np.arange(arr.shape[0])[:, None], idxs]
@@ -558,7 +559,7 @@ class BNN:
         inv_var = tf.exp(-log_var)
 
         if inc_var_loss:
-            print("MEAN ", mean)
+            #print("MEAN ", mean)
             mse_losses = tf.compat.v1.reduce_mean(tf.compat.v1.reduce_mean(tf.square(mean - targets) * inv_var, axis=-1), axis=-1)
             var_losses = tf.compat.v1.reduce_mean(tf.compat.v1.reduce_mean(log_var, axis=-1), axis=-1)
             total_losses = mse_losses + var_losses

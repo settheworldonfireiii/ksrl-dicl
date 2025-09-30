@@ -1,0 +1,44 @@
+no change     /users/2/radke149/anaconda3/condabin/conda
+no change     /users/2/radke149/anaconda3/bin/conda
+no change     /users/2/radke149/anaconda3/bin/conda-env
+no change     /users/2/radke149/anaconda3/bin/activate
+no change     /users/2/radke149/anaconda3/bin/deactivate
+no change     /users/2/radke149/anaconda3/etc/profile.d/conda.sh
+no change     /users/2/radke149/anaconda3/etc/fish/conf.d/conda.fish
+no change     /users/2/radke149/anaconda3/shell/condabin/Conda.psm1
+no change     /users/2/radke149/anaconda3/shell/condabin/conda-hook.ps1
+no change     /users/2/radke149/anaconda3/lib/python3.12/site-packages/xontrib/conda.xsh
+no change     /users/2/radke149/anaconda3/etc/profile.d/conda.csh
+modified      /users/2/radke149/.bashrc
+
+==> For changes to take effect, close and re-open your current shell. <==
+
+[CudaDevice(id=0), CudaDevice(id=1)]
+Job started at: Mon Sep 29 21:09:40 CDT 2025
+/scratch.global/radke149/dicl-ksrl-py11/lib/python3.11/site-packages/torch/cuda/__init__.py:61: FutureWarning: The pynvml package is deprecated. Please install nvidia-ml-py instead. If you did not install pynvml directly, please report this to the maintainers of the package that installed pynvml for you.
+  import pynvml  # type: ignore[import]
+2025-09-29 21:09:51.594923: E external/local_xla/xla/stream_executor/cuda/cuda_fft.cc:467] Unable to register cuFFT factory: Attempting to register factory for plugin cuFFT when one has already been registered
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+E0000 00:00:1759198191.872089 3500879 cuda_dnn.cc:8579] Unable to register cuDNN factory: Attempting to register factory for plugin cuDNN when one has already been registered
+E0000 00:00:1759198191.954751 3500879 cuda_blas.cc:1407] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered
+W0000 00:00:1759198192.637333 3500879 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+W0000 00:00:1759198192.637361 3500879 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+W0000 00:00:1759198192.637366 3500879 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+W0000 00:00:1759198192.637370 3500879 computation_placer.cc:177] computation placer already registered. Please check linkage and avoid linking the same target more than once.
+2025-09-29 21:09:52.698176: I tensorflow/core/platform/cpu_feature_guard.cc:210] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
+To enable the following instructions: AVX2 FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
+WARNING:tensorflow:From /scratch.global/radke149/dicl-ksrl-py11/lib/python3.11/site-packages/tensorflow/python/compat/v2_compat.py:98: disable_resource_variables (from tensorflow.python.ops.resource_variables_toggle) is deprecated and will be removed in a future version.
+Instructions for updating:
+non-resource variables are not supported in the long term
+`torch_dtype` is deprecated! Use `dtype` instead!
+I0000 00:00:1759198247.935051 3500879 gpu_device.cc:2019] Created device /job:localhost/replica:0/task:0/device:GPU:0 with 20221 MB memory:  -> device: 0, name: NVIDIA A100-SXM4-40GB, pci bus id: 0000:06:00.0, compute capability: 8.0
+I0000 00:00:1759198247.941029 3500879 gpu_device.cc:2019] Created device /job:localhost/replica:0/task:0/device:GPU:1 with 20221 MB memory:  -> device: 1, name: NVIDIA A100-SXM4-40GB, pci bus id: 0000:c7:00.0, compute capability: 8.0
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+I0000 00:00:1759198248.269179 3500879 mlir_graph_optimization_pass.cc:425] MLIR V1 optimization pass is not enabled
+[ BNN ] Observation dim 17 | Action dim: 6 | Hidden dim: 200
+[ BNN ] Initializing model: BNN | 1 networks | 1 elites
+Created a neural network with variance predictions.
+  0%|          | 0/1000000 [00:00<?, ?it/s]  0%|          | 352/1000000 [00:00<04:44, 3519.31it/s]  0%|          | 823/1000000 [00:00<03:56, 4217.51it/s]  0%|          | 1299/1000000 [00:00<03:43, 4462.46it/s]  0%|          | 1771/1000000 [00:00<03:38, 4561.95it/s]  0%|          | 2228/1000000 [00:00<03:40, 4525.03it/s]  0%|          | 2703/1000000 [00:00<03:36, 4599.70it/s]  0%|          | 3171/1000000 [00:00<03:35, 4624.49it/s]  0%|          | 3659/1000000 [00:00<03:31, 4704.56it/s]  0%|          | 4182/1000000 [00:00<03:24, 4868.21it/s]  0%|          | 4748/1000000 [00:01<03:14, 5112.08it/s]WARNING:tensorflow:From /scratch.global/radke149/ksrl-dicl/src/dicl/rl/tf_models/utils.py:52: Variable.load (from tensorflow.python.ops.variables) is deprecated and will be removed in a future version.
+Instructions for updating:
+Prefer Variable.assign which has equivalent behavior in 2.X.
+  1%|          | 5260/1000000 [00:13<2:09:18, 128.21it/s]  1%|          | 5266/1000000 [00:13<2:10:06, 127.42it/s]  1%|          | 5623/1000000 [00:24<3:56:25, 70.10it/s]   1%|          | 5629/1000000 [00:24<3:56:48, 69.98it/s]

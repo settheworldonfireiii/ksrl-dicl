@@ -748,7 +748,7 @@ def main():
 
                 batches_to_train_on = [copy.copy(data)]
                 coeff_batches_to_train_on = [1.0]
-                if ((global_step + local_step)%250 == 0) and (global_step + local_step) <( args.llm_learning_starts  - args.learning_starts  + step_started_sampling):
+                if ((global_step + local_step)%250 == 0)  and ((global_step + local_step) <( args.llm_learning_starts  - args.learning_starts  + step_started_sampling)):
                     for i in range(batches_to_train_on[0].observations.shape[0]):
                         if args.env_id == "Pendulum":
                             xu = torch.cat((torch.tensor(tf.get_static_value(batches_to_train_on[0].observations[i].squeeze().cpu())).double(), torch.tensor(tf.get_static_value(batches_to_train_on[0].actions[i].cpu())).double()))
@@ -762,7 +762,10 @@ def main():
                     my_dx.train(100)
                     my_dx.generate_latent_z(True)
                     post_var = my_dx.update_bays_reg()
-                    ksd_val = my_dx.get_ksd('ksd')
+                    my_dx.train_x = None
+                    my_dx.train_y = None
+                    my_dx.rew = None
+                    #ksd_val = my_dx.get_ksd('ksd')
                 """ 
                 if ((global_step + local_step)%1 == 0):
                     #pdb.set_trace()
@@ -813,7 +816,7 @@ def main():
                     
                     if args.train_only_from_llm:
                         # data = data_llm
-                
+                        
                         newiter = True
                         for i in range(len(data_llm[0])):
                             #pdb.set_trace()
@@ -846,13 +849,15 @@ def main():
                                                     else data.discounts.index_select(0, idx),
                             )
                            
-
+                        
                         batches_to_train_on = [copy.copy(data_llm)]
                         coeff_batches_to_train_on = [1.0]
 
 
                     else:
+                        
                         newiter = True
+                        
                         for i in range(len(data_llm[0])):
                             #pdb.set_trace()
                             if args.env_id == "Pendulum":
@@ -884,7 +889,7 @@ def main():
                                                     else data.discounts.index_select(0, idx),
                             )
                        
-        
+                        
                         batches_to_train_on.append(copy.copy(data_llm))
                         coeff_batches_to_train_on.append(
                             float(args.llm_batch_size / args.batch_size)

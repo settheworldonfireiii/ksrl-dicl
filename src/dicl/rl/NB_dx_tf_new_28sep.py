@@ -79,7 +79,35 @@ class neural_bays_dx_tf(object):
                 self.rew =  new_r
 
             else:
-                 
+                if newiter == True:
+                    self.train_x = _to_np(new_x)
+                    self.train_y = _to_np(new_y)
+                    #add reward
+                    self.rew =  _to_np(new_r)
+                    self.curr_ids =[range(new_x.shape[0])]
+                    return self.train_x.shape
+                else:
+                    #add the thinning condition : Based on Posterior variane (if posterior variance > threshold)
+                    tx = _to_np(self.train_x)
+                    nx = _to_np(new_x)
+                    self.train_x = np.vstack((tx, nx))
+                    #print(tx.shape)
+                    #print(nx.shape)
+                    #print(self.train_x.shape)
+                    ty = _to_np(self.train_y)
+                    ny = _to_np(new_y)
+                    tr = _to_np(self.rew)
+                    nr = _to_np(new_r)
+
+                    self.train_x = np.vstack((tx, nx))
+
+                    self.train_y = np.vstack((ty, ny))
+                    # print (torch.is_tensor(self.train_x))
+                    #add rewards
+                    self.rew = np.vstack((tr, nr))
+                    self.curr_ids = list(range(0, self.train_x.shape[0]))
+                    return self.train_x.shape
+                """
                 #add the thinning condition : Based on Posterior variane (if posterior variance > threshold)
                 tx = _to_np(self.train_x)
                 nx = _to_np(new_x)
@@ -99,6 +127,7 @@ class neural_bays_dx_tf(object):
                 #add rewards
                 self.rew = np.vstack((tr, nr))
                 return self.train_x.shape
+                """
         else:
             if self.train_x_s is None:
             
@@ -208,10 +237,23 @@ class neural_bays_dx_tf(object):
         """
         Returns the latent feature vector from the neural network.
         """
-        z = self.model.predict(input, layer = True)
+        if self.model_type == "SAC":
+            z = self.model.predict(input)
+            """
+            print("EXTRACTED")
+            print(input.shape)
+            print(self.model.policy.features_extractor)
+            obs_tensor = torch.as_tensor(input, dtype=torch.float32).to(self.model.device)
+            features = self.model.actor.extract_features(
+                    obs_tensor, self.model.actor.features_extractor
+                    )
+            z_tensor = self.model.policy.actor.latent_pi(features)
+            z = z_tensor.detach().cpu().numpy()
+            """
+        else:
+            z = self.model.predict(input, layer = True)
         z = z.squeeze()
-         
-        #pdb.set_trace()
+
         return z
 
 
@@ -280,7 +322,7 @@ class neural_bays_dx_tf(object):
                 else:
                     y = self.train_y[:, i] - self.model.layers[len(self.model.layers)-1].biases.eval(session =self.model.sess).squeeze()[i]
                 s = np.dot(z.T, z)
-                #print(s.shape)
+                print(s.shape)
                 # inv = np.linalg.inv((s/self.sigma_n + 1/self.sigma*self.eye))
                 A = s / self.sigma_n2 + 1 / self.sigma2 * self.eye
                 B = np.dot(z.T, y) / self.sigma_n2
@@ -316,7 +358,7 @@ class neural_bays_dx_tf(object):
                 else:
                     y = np.concatenate([self.train_y_s[:n//5, i], self.train_y[n//5:, i]], axis = 0) - self.model.layers[len(self.model.layers)-1].biases.eval(session =self.model.sess).squeeze()[i]
                 s = np.dot(z.T, z)
-                #print(s.shape)
+                print(s.shape)
                 # inv = np.linalg.inv((s/self.sigma_n + 1/self.sigma*self.eye))
                 A = s / self.sigma_n2 + 1 / self.sigma2 * self.eye
                 B = np.dot(z.T, y) / self.sigma_n2
@@ -664,8 +706,7 @@ class neural_bays_dx_tf(object):
                     y = self.train_y_s[:, i] - self.model.layers[len(self.model.layers)-1].biases.eval(session =self.model.sess).squeeze()[i]
 
                     #get the w_likelihood
-                    #pdb.set_trace()
-                    r1 = np.linalg.pinv(np.dot(z.T, z))
+                    r1 = np.linalg.inv(np.dot(z.T, z))
                     r2 = np.dot(z.T,y)
                     w_likelihood =  np.dot(r1, r2)
 

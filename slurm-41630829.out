@@ -1,7 +1,0 @@
-/var/spool/slurmd/job41630829/slurm_script: line 18: source: /scratch.global/radke149/dicl-ksrl-py11: is a directory
-
-CondaError: Run 'conda init' before 'conda activate'
-
-Job started at: Sat Sep 27 22:51:44 CDT 2025
-/var/spool/slurmd/job41630829/slurm_script: line 26: dicl-sac: command not found
-Job ended at: Sat Sep 27 22:51:44 CDT 2025
