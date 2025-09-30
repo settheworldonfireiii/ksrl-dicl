@@ -665,7 +665,7 @@ class neural_bays_dx_tf(object):
 
                     #get the w_likelihood
                     #pdb.set_trace()
-                    r1 = np.linalg.pinv(np.dot(z.T, z))
+                    r1 = np.linalg.inv(np.dot(z.T, z))
                     r2 = np.dot(z.T,y)
                     w_likelihood =  np.dot(r1, r2)
 
