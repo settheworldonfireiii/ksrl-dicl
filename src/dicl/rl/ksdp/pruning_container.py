@@ -10,17 +10,19 @@ class PruningContainer:
         self.ids = []
    
     @torch.no_grad()
-    def best_index(self, candidate_points, candidate_gradients):
+    def best_index(self, candidate_points, candidate_gradients, candidate_ids):
         #Given an array of new points and gradients, select the KSD-optimal point
       
         row_sums = []
+        #print("candidate points ",candidate_points)
         for candidate_point,candidate_gradient in zip(candidate_points,candidate_gradients):
             stacked_points = torch.cat([self.points,candidate_point.unsqueeze(0)])
             stacked_gradients= torch.cat([self.gradients,candidate_gradient.unsqueeze(0)])
             h = ksd._get_h(stacked_points,self.h_method) if self.kernel_type=='rbf' else None
             row_sums.append(ksd.get_K_row(samples=stacked_points,gradients=stacked_gradients,kernel_type=self.kernel_type,h=h).sum())
-
-        return torch.stack(row_sums).argmin()
+            minpoint = torch.stack(row_sums).argmin()
+        #print("minpoints , ids, points ", minpoint, self.ids, self.points)
+        return minpoint, candidate_ids[minpoint]
 
     def best_index_del(self, candidate_points, candidate_gradients):
         #Given an array of new points and gradients, select the KSD-optimal point
@@ -42,9 +44,13 @@ class PruningContainer:
         
         try:
             assert hasattr(self,'points') and hasattr(self,'gradients') and hasattr(self,'ids') 
+            #print("NOT THE FIRST POINT")
             self.points = torch.cat([self.points,point.unsqueeze(0)])
+            #print(self.points.shape[0])
             self.gradients = torch.cat([self.gradients,gradient.unsqueeze(0)])
+            #print("IDS WHEN ADDING POINT ", self.ids)
             self.ids.append(global_id)
+            #print("IDS AFTER  ADDING POINT ", self.ids)
             self.update_K_info(method='add_row')
 
         except Exception as e:
@@ -54,7 +60,9 @@ class PruningContainer:
             except:
                 raise e
             #pruning container not initialized, this is the first point
+            #print("IDS WHEN ADDING THE FIRST POINT ", self.ids)
             self.points = point.unsqueeze(0)
+            #print("IDS AFTER  ADDING THE FIRST POINT ", self.ids)
             self.gradients = gradient.unsqueeze(0)
             self.update_K_info(method="from_scratch")
             self.ids = [global_id]
@@ -190,20 +198,20 @@ class PruningContainer:
         return self.row_sums.sum() / n**2
 
 
+
     @torch.no_grad()
     def prune_to_cutoff(self, cutoff, min_samples=None):
-        
-
         pruned_samples = []
-        
+        pruned_ids = []
         if self.points.shape[0]<=min_samples:
-            return pruned_samples
+            #print(self.points.shape[0])
+            #print("LESS SAMPLES")
+            return pruned_samples, pruned_ids
         """
         test_ksd_squared = self.K_matrix.sum()/(self.K_matrix.shape[0]**2)
         print("Row sum",self.row_sums)
         print("K MAT ",self.K_matrix)
         init_ksd_squared = self.get_ksd_squared()
-
         print("testing that quick ksd is ok")
         print(init_ksd_squared,test_ksd_squared)
         assert torch.allclose(test_ksd_squared,init_ksd_squared)
@@ -211,30 +219,31 @@ class PruningContainer:
         init_ksd_squared = self.get_ksd_squared()
         ksd_squared = init_ksd_squared
         #iteratively prune until cutoff is reached
-
         num_pruned = 0
-       
         #equality permitted to avoid breaking before starting
         while ksd_squared <= init_ksd_squared+cutoff:
             if (self.points.shape[0]-1)<min_samples:
-                return pruned_samples
-
+                #print("LESS")
+                #print(self.points.shape[0])
+                return pruned_samples, pruned_ids
             removal_ksd2_contrib,least_influential_point = torch.topk(self.ksd2_contrib,1,largest=True)
-
             num_points = self.points.shape[0]
             ksd_squared = ((num_points**2)*ksd_squared-removal_ksd2_contrib) / (num_points-1)**2
-          
             #test if removing point exceeds cutoff
             if ksd_squared > init_ksd_squared+cutoff:
-                return pruned_samples
+                #print("MORE")
+                #print(self.points.shape[0])
+                return pruned_samples, pruned_ids
             else:
                 num_pruned+=1
                 pruned_samples.append(self.points[least_influential_point])
+                pruned_ids.append(self.ids[least_influential_point])
                 self.update_K_info(method='remove_row',removed_row_index=least_influential_point)
+        #print("NRML")
+        #print(self.point.shape[0])
+        return pruned_samples, pruned_ids
 
-        return pruned_samples
-
-
+    """
     @torch.no_grad()
     def prune_to_cutoff(self, cutoff, min_samples=None):
         
@@ -243,7 +252,7 @@ class PruningContainer:
         pruned_ids = [] 
         if self.points.shape[0]<=min_samples:
             return pruned_samples, pruned_ids
-        """
+        
         test_ksd_squared = self.K_matrix.sum()/(self.K_matrix.shape[0]**2)
         print("Row sum",self.row_sums)
         print("K MAT ",self.K_matrix)
@@ -252,7 +261,7 @@ class PruningContainer:
         print("testing that quick ksd is ok")
         print(init_ksd_squared,test_ksd_squared)
         assert torch.allclose(test_ksd_squared,init_ksd_squared)
-        """
+        
         init_ksd_squared = self.get_ksd_squared()
         ksd_squared = init_ksd_squared
         #iteratively prune until cutoff is reached
@@ -279,3 +288,4 @@ class PruningContainer:
                 self.update_K_info(method='remove_row',removed_row_index=least_influential_point)
 
         return pruned_samples, pruned_id
+        """

@@ -6,8 +6,8 @@
 #SBATCH --tmp=10g
 #SBATCH --mail-type=ALL
 #SBATCH --mail-user=radke149@umn.edu
-#SBATCH -p a100-4       
-#SBATCH --gres=gpu:a100:2  # Request 2 GPUs to match nproc_per_node
+#SBATCH -p interactive-gpu      
+#SBATCH --gres=gpu:a40:2  # Request 2 GPUs to match nproc_per_node
 
 
 cd /scratch.global/radke149/ksrl-dicl
@@ -35,7 +35,7 @@ python -c 'import jax; print(jax.devices())'
 
 echo "Job started at: $(date)"
 
-dicl-sac --seed $RANDOM --env-id HalfCheetah-v4 --total-timesteps 1000000 --exp_name "HALFCHEETAH_BASELINE_MINE_50p" --batch_size 128 --llm_batch_size 64 --llm_learning_frequency 256 --context_length 500 --interact_every 1 --learning_starts 5000 --llm_learning_starts 10000 --llm_model 'meta-llama/Llama-3.2-1B' --method 'dicl_s_pca'
+dicl-sac --seed $RANDOM --env-id HalfCheetah-v4 --total-timesteps 1000000 --exp_name "CERTAINEMENT_FINALLY_30SEP_LSQR_HALFCHEETAH_BASELINE_MINE_50p" --batch_size 128 --llm_batch_size 7 --llm_learning_frequency 256 --context_length 500 --interact_every 1 --learning_starts 5000 --llm_learning_starts 10000 --llm_model 'meta-llama/Llama-3.2-1B' --method 'dicl_s_pca'
 
 echo "Job ended at: $(date)"
 
